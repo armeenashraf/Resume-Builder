@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#3b2b23">
+<title>Maison Résumé</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <section id="authView" class="view">
+    <div class="auth-art">
+      <div class="brand">MAISON <span>RÉSUMÉ</span></div>
+      <div class="paper one"></div><div class="paper two"></div><div class="orb"></div>
+      <div class="auth-copy">
+        <p class="eyebrow">YOUR STORY, BEAUTIFULLY TOLD</p>
+        <h1>Make your next opportunity look unforgettable.</h1>
+        <p>Design, customize, save and export a premium resume from one elegant workspace.</p>
+      </div>
+      <div class="mini-resume"><b>ALEXANDRA MORGAN</b><small>Creative Director</small><i></i><span></span><span></span><span></span></div>
+    </div>
+    <div class="auth-panel">
+      <div class="auth-card">
+        <p class="eyebrow">WELCOME</p>
+        <h2 id="authTitle">Welcome back</h2>
+        <p id="authSubtitle">Your next opportunity starts with a better resume.</p>
+        <form id="authForm">
+          <div id="nameField" class="field hidden"><label>Full name</label><input id="authName" type="text" placeholder="Your full name"></div>
+          <div class="field"><label>Email</label><input id="authEmail" type="email" placeholder="you@example.com" required></div>
+          <div class="field"><label>Password</label><div class="password-wrap"><input id="authPassword" type="password" placeholder="••••••••" required><button type="button" class="icon-btn password-toggle" data-target="authPassword">Show</button></div></div>
+          <div id="confirmField" class="field hidden"><label>Confirm password</label><input id="authConfirm" type="password" placeholder="Repeat password"></div>
+          <div class="auth-row"><button id="forgotBtn" type="button" class="text-btn">Forgot password?</button></div>
+          <button id="authSubmit" class="primary full" type="submit">Log in</button>
+        </form>
+        <div class="divider"><span>or</span></div>
+        <button id="googleBtn" class="google-btn" type="button">Continue with Google</button>
+        <p class="switch-auth"><span id="switchText">Don't have an account?</span> <button id="switchAuth" type="button" class="text-btn">Sign up</button></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="dashboardView" class="view hidden">
+    <header class="topbar">
+      <button class="brand dashboard-brand" data-home>MAISON <span>RÉSUMÉ</span></button>
+      <div class="top-actions"><span id="userGreeting"></span><button id="logoutBtn" class="ghost">Log out</button></div>
+    </header>
+    <main class="dashboard">
+      <div class="dashboard-hero"><div><p class="eyebrow">YOUR WORKSPACE</p><h1 id="dashHello">Welcome</h1><p>Your resume is ready whenever you are.</p></div><button id="newResumeBtn" class="primary">+ Create new resume</button></div>
+      <div class="resume-home-card">
+        <div class="home-preview"><div class="tiny-paper"><b id="homeResumeName">Untitled resume</b><i></i><span></span><span></span><span></span></div></div>
+        <div class="home-info"><p class="eyebrow">SAVED RESUME</p><h2 id="homeResumeTitle">Untitled resume</h2><p id="lastSaved">Not saved yet</p><div class="home-buttons"><button id="editResumeBtn" class="primary">Edit resume</button><button id="homePdfBtn" class="secondary">Download PDF</button><button id="homePngBtn" class="ghost">Download PNG</button></div></div>
+      </div>
+    </main>
+  </section>
+
+  <section id="builderView" class="view hidden">
+    <header class="topbar builder-topbar">
+      <button id="backDashboardBtn" class="ghost">← Dashboard</button>
+      <div class="save-line"><span id="resumeStatus">Ready</span><span id="builderTime"></span></div>
+      <div class="export-actions"><button id="saveBtn" class="secondary">Save</button><button id="pdfBtn" class="primary">Download PDF</button><button id="pngBtn" class="ghost">Download PNG</button></div>
+    </header>
+    <main class="workspace">
+      <aside class="editor">
+        <div class="editor-tabs">
+          <button class="tab active" data-tab="content">Content</button>
+          <button class="tab" data-tab="templates">Templates</button>
+          <button class="tab" data-tab="customize">Customize</button>
+        </div>
+
+        <div id="contentPanel" class="tab-panel active">
+          <section class="form-section"><h3>Resume details</h3><div class="field"><label>Resume name</label><input data-key="resumeName" placeholder="Untitled resume"></div></section>
+          <section class="form-section"><h3>Personal information</h3>
+            <div class="grid-2"><div class="field"><label>Full name</label><input data-key="fullName" placeholder="Your name"></div><div class="field"><label>Professional title</label><input data-key="title" placeholder="Frontend Developer"></div></div>
+            <div class="grid-2"><div class="field"><label>Email</label><input data-key="email" type="email"></div><div class="field"><label>Phone</label><input data-key="phone"></div></div>
+            <div class="grid-2"><div class="field"><label>Location</label><input data-key="location"></div><div class="field"><label>Website</label><input data-key="website"></div></div>
+            <div class="grid-2"><div class="field"><label>LinkedIn</label><input data-key="linkedin"></div><div class="field"><label>GitHub</label><input data-key="github"></div></div>
+            <div class="field"><label>Profile photo</label><input id="photoInput" type="file" accept="image/*"></div>
+          </section>
+          <section class="form-section"><h3>Professional summary</h3><textarea data-key="summary" placeholder="Write a concise introduction about yourself..."></textarea></section>
+          <section class="form-section"><h3>Education</h3><div id="educationList"></div><button class="add-btn" data-add="education">+ Add education</button></section>
+          <section class="form-section"><h3>Experience</h3><div id="experienceList"></div><button class="add-btn" data-add="experience">+ Add experience</button></section>
+          <section class="form-section"><h3>Projects</h3><div id="projectsList"></div><button class="add-btn" data-add="projects">+ Add project</button></section>
+          <section class="form-section"><h3>Certifications</h3><div id="certificationsList"></div><button class="add-btn" data-add="certifications">+ Add certification</button></section>
+          <section class="form-section"><h3>Skills</h3><div id="skillsList"></div><button class="add-btn" data-add="skills">+ Add skill</button></section>
+          <section class="form-section"><h3>Languages</h3><div id="languagesList"></div><button class="add-btn" data-add="languages">+ Add language</button></section>
+          <section class="form-section"><h3>Achievements</h3><div id="achievementsList"></div><button class="add-btn" data-add="achievements">+ Add achievement</button></section>
+          <section class="form-section"><h3>Interests</h3><div id="interestsList"></div><button class="add-btn" data-add="interests">+ Add interest</button></section>
+        </div>
+
+        <div id="templatesPanel" class="tab-panel">
+          <div class="template-grid" id="templateGrid"></div>
+        </div>
+
+        <div id="customizePanel" class="tab-panel">
+          <section class="form-section"><h3>Colors</h3>
+            <div class="color-row"><label>Accent</label><input type="color" data-style="accentColor"><input class="hex" data-style="accentColor" data-hex placeholder="#8B5E3C"></div>
+            <div class="color-row"><label>Text</label><input type="color" data-style="textColor"><input class="hex" data-style="textColor" data-hex></div>
+            <div class="color-row"><label>Background</label><input type="color" data-style="backgroundColor"><input class="hex" data-style="backgroundColor" data-hex></div>
+            <div class="color-row"><label>Border</label><input type="color" data-style="borderColor"><input class="hex" data-style="borderColor" data-hex></div>
+            <div class="preset-colors" id="presetColors"></div>
+          </section>
+          <section class="form-section"><h3>Typography</h3>
+            <div class="field"><label>Heading font</label><select data-style="headingFont"></select></div>
+            <div class="field"><label>Body font</label><select data-style="bodyFont"></select></div>
+            <div class="grid-2"><div class="field"><label>Heading size</label><input type="number" min="16" max="60" data-style="headingSize"></div><div class="field"><label>Body size</label><input type="number" min="8" max="18" step=".5" data-style="bodySize"></div></div>
+          </section>
+          <section class="form-section"><h3>Page & borders</h3>
+            <div class="grid-2"><div class="field"><label>Width (mm)</label><input type="number" min="160" max="260" data-style="pageWidth"></div><div class="field"><label>Height (mm)</label><input type="number" min="200" max="500" data-style="pageHeight"></div></div>
+            <div class="grid-2"><div class="field"><label>Page padding (mm)</label><input type="number" min="5" max="35" data-style="pagePadding"></div><div class="field"><label>Border (px)</label><input type="number" min="0" max="8" data-style="borderWidth"></div></div>
+            <div class="field"><label>Border style</label><select data-style="borderStyle"><option>solid</option><option>dashed</option><option>dotted</option><option>double</option></select></div>
+            <div class="field"><label>Corner radius (px)</label><input type="number" min="0" max="30" data-style="radius"></div>
+          </section>
+        </div>
+      </aside>
+
+      <section class="preview-area">
+        <div class="zoom-controls"><button id="zoomOut">−</button><span id="zoomLabel">100%</span><button id="zoomIn">+</button></div>
+        <div class="preview-stage"><div id="resumePreview" class="resume template-editorial"></div></div>
+      </section>
+    </main>
+  </section>
+</div>
+
+<div id="toast" class="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
