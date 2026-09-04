@@ -20,33 +20,52 @@ get,
 serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
+/* =========================
+FIREBASE CONFIG
+========================= */
+
 const firebaseConfig = {
-    apiKey: "AIzaSyDtemoC6pcZwPwZwP6Sb5GsCBjvbDy-xR0",
-    authDomain: "resume-builder-c77c7.firebaseapp.com",
-    databaseURL: "https://resume-builder-c77c7-default-rtdb.firebaseio.com",
-    projectId: "resume-builder-c77c7",
-    storageBucket: "resume-builder-c77c7.firebasestorage.app",
-    messagingSenderId: "821521838879",
-    appId: "1:821521838879:web:2a74dd1ecb04347d58b62a",
-    measurementId: "G-K3VWTV0TQN"
-  };
+apiKey: "AIzaSyDtemoC6pcZwPwZwP6Sb5GsCBjvbDy-xR0",
+authDomain: "resume-builder-c77c7.firebaseapp.com",
+databaseURL: "https://resume-builder-c77c7-default-rtdb.firebaseio.com",
+projectId: "resume-builder-c77c7",
+storageBucket: "resume-builder-c77c7.firebasestorage.app",
+messagingSenderId: "821521838879",
+appId: "1:821521838879:web:2a74dd1ecb04347d58b62a",
+measurementId: "G-K3VWTV0TQN"
+};
 
+/* =========================
+INITIALIZE FIREBASE
+========================= */
 
-let app, auth, db;
+let app;
+let auth;
+let db;
 
 try {
 app = initializeApp(firebaseConfig);
 auth = getAuth(app);
 db = getDatabase(app);
+
+console.log("Firebase Realtime Database connected");
 } catch (error) {
 console.error("Firebase initialization error:", error);
 }
 
-const $ = s => document.querySelector(s);
-const $$ = s => [...document.querySelectorAll(s)];
+/* =========================
+HELPERS
+========================= */
 
-const clone = v => JSON.parse(JSON.stringify(v));
-const empty = () => ({});
+const $ = selector => document.querySelector(selector);
+const $$ = selector => [...document.querySelectorAll(selector)];
+
+const clone = value =>
+JSON.parse(JSON.stringify(value));
+
+/* =========================
+DEFAULT RESUME
+========================= */
 
 const defaults = {
 resumeName: "Untitled resume",
@@ -94,12 +113,19 @@ createdAt: null,
 updatedAt: null
 };
 
+/* =========================
+APP STATE
+========================= */
+
 let state = clone(defaults);
 let user = null;
 let zoom = 0.82;
 let authMode = "login";
-let saveTimer;
 let autoTimer;
+
+/* =========================
+TEMPLATES
+========================= */
 
 const templates = [
 ["editorial", "Editorial"],
@@ -135,49 +161,66 @@ const fonts = [
 "Inter"
 ];
 
+/* =========================
+SECURITY / TEXT HELPERS
+========================= */
+
 const escapeHtml = value =>
-String(value ?? "").replace(/[&<>"']/g, m => ({
+String(value ?? "").replace(
+/[&<>"']/g,
+character => ({
 "&": "&",
 "<": "<",
 ">": ">",
 '"': """,
 "'": "'"
-}[m]));
+}[character])
+);
 
-const listText = arr =>
-arr
+const listText = array =>
+array
 .filter(Boolean)
-.map(v =>
-`<span class="pill">${escapeHtml(
-        typeof v === "string" ? v : v.name || v.title || ""
-      )}</span>`
+.map(item =>
+`<span class="pill">${
+        escapeHtml(
+          typeof item === "string"
+            ? item
+            : item.name || item.title || ""
+        )
+      }</span>`
 )
 .join("");
 
-function toast(message) {
-const t = $("#toast");
+/* =========================
+UI FUNCTIONS
+========================= */
 
-if (!t) {
+function toast(message) {
+const element = $("#toast");
+
+if (!element) {
 console.log(message);
 return;
 }
 
-t.textContent = message;
-t.classList.add("show");
+element.textContent = message;
+element.classList.add("show");
 
 setTimeout(() => {
-t.classList.remove("show");
+element.classList.remove("show");
 }, 2600);
 }
 
 function show(id) {
 
-$$$(".view").forEach(v => v.classList.add("hidden"));
+$$$(".view").forEach(view => {
+  view.classList.add("hidden");
+});
 
-const view = $(id);
+const selected = $(id);
 
-if (view) {
-  view.classList.remove("hidden");
+if (selected) {
+  selected.classList.remove("hidden");
 }
 }
 
@@ -193,7 +236,7 @@ $$(".tab").forEach(button => {
 $$(".tab-panel").forEach(panel => {
   panel.classList.toggle(
     "active",
-    panel.id === name + "Panel"
+    panel.id === `${name}Panel`
   );
 });
 }
@@ -205,15 +248,11 @@ return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value);
 
 
 function formatTime(timestamp) {
-if (!timestamp) {
+if (!timestamp || typeof timestamp !== "number") {
   return "Not saved yet";
 }
 
 const date = new Date(timestamp);
-
-if (isNaN(date.getTime())) {
-  return "Not saved yet";
-}
 
 return `Last updated: ${date.toLocaleDateString(
   undefined,
@@ -233,11 +272,12 @@ return `Last updated: ${date.toLocaleDateString(
 
 
 function relativeTime(timestamp) {
-if (!timestamp) {
+if (!timestamp || typeof timestamp !== "number") {
   return "Not saved yet";
 }
 
 const date = new Date(timestamp);
+
 const minutes = Math.floor(
   (Date.now() - date.getTime()) / 60000
 );
@@ -250,17 +290,25 @@ if (minutes < 60) {
   return `Last saved ${minutes} min ago`;
 }
 
-return formatTime(date.getTime());
+return formatTime(timestamp);
 }
 
 
+/* =========================
+ RESUME SECTIONS
+========================= */
+
 function section(title, content, extra = "") {
-return content
-  ? `<section class="resume-section ${extra}">
-      <h3>${title}</h3>
-      ${content}
-    </section>`
-  : "";
+if (!content) {
+  return "";
+}
+
+return `
+  <section class="resume-section ${extra}">
+    <h3>${title}</h3>
+    ${content}
+  </section>
+`;
 }
 
 
@@ -274,15 +322,19 @@ const contacts = [
   state.github
 ].filter(Boolean);
 
-return contacts.length
-  ? `<div class="resume-contact">
-      ${contacts.map(escapeHtml).join(" • ")}
-    </div>`
-  : "";
+if (!contacts.length) {
+  return "";
+}
+
+return `
+  <div class="resume-contact">
+    ${contacts.map(escapeHtml).join(" • ")}
+  </div>
+`;
 }
 
 
-function itemsHtml(items, type) {
+function itemsHtml(items, type = "") {
 return items
   .map(item => {
     if (typeof item === "string") {
@@ -328,6 +380,7 @@ return items
       }">
 
         <div class="item-top">
+
           <div>
 
             <div class="item-title">
@@ -343,6 +396,7 @@ return items
           <div class="item-meta">
             ${escapeHtml(date)}
           </div>
+
         </div>
 
         ${
@@ -373,151 +427,145 @@ return items
 
 
 function contentBlocks(side = false) {
-
-const exp = section(
-  "Experience",
-  itemsHtml(
-    state.experience,
-    side ? "timeline" : ""
-  )
-);
-
-const edu = section(
-  "Education",
-  itemsHtml(
-    state.education,
-    side ? "timeline" : ""
-  )
-);
-
-const projects = section(
-  "Projects",
-  itemsHtml(state.projects)
-);
-
-const cert = section(
-  "Certifications",
-  itemsHtml(state.certifications)
-);
-
-const skills = section(
-  "Skills",
-  listText(state.skills)
-);
-
-const languages = section(
-  "Languages",
-  listText(state.languages)
-);
-
-const achievements = section(
-  "Achievements",
-  itemsHtml(state.achievements)
-);
-
-const interests = section(
-  "Interests",
-  listText(state.interests)
-);
-
 return {
-  exp,
-  edu,
-  projects,
-  cert,
-  skills,
-  languages,
-  achievements,
-  interests
+  exp: section(
+    "Experience",
+    itemsHtml(
+      state.experience,
+      side ? "timeline" : ""
+    )
+  ),
+
+  edu: section(
+    "Education",
+    itemsHtml(
+      state.education,
+      side ? "timeline" : ""
+    )
+  ),
+
+  projects: section(
+    "Projects",
+    itemsHtml(state.projects)
+  ),
+
+  cert: section(
+    "Certifications",
+    itemsHtml(state.certifications)
+  ),
+
+  skills: section(
+    "Skills",
+    listText(state.skills)
+  ),
+
+  languages: section(
+    "Languages",
+    listText(state.languages)
+  ),
+
+  achievements: section(
+    "Achievements",
+    itemsHtml(state.achievements)
+  ),
+
+  interests: section(
+    "Interests",
+    listText(state.interests)
+  )
 };
 }
 
 
+/* =========================
+ RENDER RESUME
+========================= */
+
 function renderResume() {
+const resume = $("#resumePreview");
 
-const r = $("#resumePreview");
-const s = state.style;
-const hasName = state.fullName.trim();
-
-if (!r) {
+if (!resume) {
   return;
 }
 
-r.className = `resume template-${state.template}`;
+const style = state.style;
+const hasName = state.fullName.trim();
 
-r.style.setProperty(
+resume.className =
+  `resume template-${state.template}`;
+
+resume.style.setProperty(
   "--accent",
-  s.accentColor
+  style.accentColor
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--text",
-  s.textColor
+  style.textColor
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--body-font",
-  `"${s.bodyFont}"`
+  `"${style.bodyFont}"`
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--heading-font",
-  `"${s.headingFont}"`
+  `"${style.headingFont}"`
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--heading-size",
-  s.headingSize + "px"
+  `${style.headingSize}px`
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--body-size",
-  s.bodySize + "px"
+  `${style.bodySize}px`
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--page-padding",
-  s.pagePadding + "mm"
+  `${style.pagePadding}mm`
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--border-width",
-  s.borderWidth + "px"
+  `${style.borderWidth}px`
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--border-style",
-  s.borderStyle
+  style.borderStyle
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--border-color",
-  s.borderColor
+  style.borderColor
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--radius",
-  s.radius + "px"
+  `${style.radius}px`
 );
 
-r.style.setProperty(
+resume.style.setProperty(
   "--line-height",
-  s.lineHeight || 1.45
+  style.lineHeight || 1.45
 );
 
-r.style.background =
-  s.backgroundColor;
+resume.style.background =
+  style.backgroundColor;
 
-r.style.width =
-  s.pageWidth + "mm";
+resume.style.width =
+  `${style.pageWidth}mm`;
 
-r.style.minHeight =
-  s.pageHeight + "mm";
+resume.style.minHeight =
+  `${style.pageHeight}mm`;
 
 
 if (!hasName) {
-
-  r.innerHTML = `
+  resume.innerHTML = `
     <div class="resume-empty">
       <div>
         <h2>Start building your resume</h2>
@@ -538,7 +586,7 @@ const photo = state.photo
     <img
       class="profile-photo"
       src="${state.photo}"
-      alt=""
+      alt="Profile photo"
     >
   `
   : "";
@@ -576,40 +624,37 @@ const header = `
 const summary = section(
   "Profile",
   state.summary
-    ? `
-      <p>
-        ${escapeHtml(state.summary)}
-      </p>
-    `
+    ? `<p>${escapeHtml(state.summary)}</p>`
     : ""
 );
 
 
-const b = contentBlocks(
-  state.template === "timeline"
-);
+const blocks =
+  contentBlocks(
+    state.template === "timeline"
+  );
 
 
 if (state.template === "editorial") {
 
-  r.innerHTML = `
+  resume.innerHTML = `
     ${header}
     ${summary}
 
     <div class="resume-body">
 
       <div>
-        ${b.exp}
-        ${b.edu}
-        ${b.projects}
-        ${b.achievements}
+        ${blocks.exp}
+        ${blocks.edu}
+        ${blocks.projects}
+        ${blocks.achievements}
       </div>
 
       <aside>
-        ${b.skills}
-        ${b.languages}
-        ${b.cert}
-        ${b.interests}
+        ${blocks.skills}
+        ${blocks.languages}
+        ${blocks.cert}
+        ${blocks.interests}
       </aside>
 
     </div>
@@ -617,8 +662,7 @@ if (state.template === "editorial") {
 
 } else if (state.template === "modern") {
 
-  r.innerHTML = `
-
+  resume.innerHTML = `
     <aside class="modern-side">
 
       ${photo}
@@ -632,26 +676,25 @@ if (state.template === "editorial") {
       </p>
 
       ${contactHtml()}
-      ${b.skills}
-      ${b.languages}
-      ${b.interests}
+      ${blocks.skills}
+      ${blocks.languages}
+      ${blocks.interests}
 
     </aside>
 
     <main class="modern-main">
       ${summary}
-      ${b.exp}
-      ${b.edu}
-      ${b.projects}
-      ${b.cert}
-      ${b.achievements}
+      ${blocks.exp}
+      ${blocks.edu}
+      ${blocks.projects}
+      ${blocks.cert}
+      ${blocks.achievements}
     </main>
   `;
 
 } else if (state.template === "creative") {
 
-  r.innerHTML = `
-
+  resume.innerHTML = `
     <div class="creative-hero">
 
       <h1 class="resume-name">
@@ -671,17 +714,17 @@ if (state.template === "editorial") {
     <div class="creative-grid">
 
       <div>
-        ${b.exp}
-        ${b.projects}
-        ${b.achievements}
+        ${blocks.exp}
+        ${blocks.projects}
+        ${blocks.achievements}
       </div>
 
       <div>
-        ${b.edu}
-        ${b.skills}
-        ${b.languages}
-        ${b.cert}
-        ${b.interests}
+        ${blocks.edu}
+        ${blocks.skills}
+        ${blocks.languages}
+        ${blocks.cert}
+        ${blocks.interests}
       </div>
 
     </div>
@@ -689,24 +732,24 @@ if (state.template === "editorial") {
 
 } else if (state.template === "executive") {
 
-  r.innerHTML = `
+  resume.innerHTML = `
     ${header}
     ${summary}
 
     <div class="creative-grid">
 
       <div>
-        ${b.exp}
-        ${b.projects}
-        ${b.achievements}
+        ${blocks.exp}
+        ${blocks.projects}
+        ${blocks.achievements}
       </div>
 
       <div>
-        ${b.edu}
-        ${b.skills}
-        ${b.languages}
-        ${b.cert}
-        ${b.interests}
+        ${blocks.edu}
+        ${blocks.skills}
+        ${blocks.languages}
+        ${blocks.cert}
+        ${blocks.interests}
       </div>
 
     </div>
@@ -714,7 +757,7 @@ if (state.template === "editorial") {
 
 } else if (state.template === "timeline") {
 
-  r.innerHTML = `
+  resume.innerHTML = `
     ${header}
     ${summary}
 
@@ -734,18 +777,17 @@ if (state.template === "editorial") {
       )
     )}
 
-    ${b.projects}
-    ${b.cert}
-    ${b.skills}
-    ${b.languages}
-    ${b.achievements}
-    ${b.interests}
+    ${blocks.projects}
+    ${blocks.cert}
+    ${blocks.skills}
+    ${blocks.languages}
+    ${blocks.achievements}
+    ${blocks.interests}
   `;
 
 } else if (state.template === "studio") {
 
-  r.innerHTML = `
-
+  resume.innerHTML = `
     <div class="studio-block">
       ${header}
     </div>
@@ -754,17 +796,17 @@ if (state.template === "editorial") {
 
       <div>
         ${summary}
-        ${b.exp}
-        ${b.projects}
+        ${blocks.exp}
+        ${blocks.projects}
       </div>
 
       <div>
-        ${b.edu}
-        ${b.skills}
-        ${b.languages}
-        ${b.cert}
-        ${b.achievements}
-        ${b.interests}
+        ${blocks.edu}
+        ${blocks.skills}
+        ${blocks.languages}
+        ${blocks.cert}
+        ${blocks.achievements}
+        ${blocks.interests}
       </div>
 
     </div>
@@ -772,52 +814,60 @@ if (state.template === "editorial") {
 
 } else {
 
-  r.innerHTML = `
+  resume.innerHTML = `
     ${header}
     ${summary}
-    ${b.exp}
-    ${b.edu}
-    ${b.projects}
-    ${b.cert}
-    ${b.skills}
-    ${b.languages}
-    ${b.achievements}
-    ${b.interests}
+    ${blocks.exp}
+    ${blocks.edu}
+    ${blocks.projects}
+    ${blocks.cert}
+    ${blocks.skills}
+    ${blocks.languages}
+    ${blocks.achievements}
+    ${blocks.interests}
   `;
 }
-
 
 applyZoom();
 }
 
 
+/* =========================
+ ZOOM
+========================= */
+
 function applyZoom() {
+const resume = $("#resumePreview");
 
-const r = $("#resumePreview");
-
-if (!r) {
+if (!resume) {
   return;
 }
 
-r.style.transform =
+resume.style.transform =
   `scale(${zoom})`;
 
 const label = $("#zoomLabel");
 
 if (label) {
   label.textContent =
-    Math.round(zoom * 100) + "%";
+    `${Math.round(zoom * 100)}%`;
 }
 
-if (r.parentElement) {
-  r.parentElement.style.minHeight =
-    `${Math.max(
-      297,
-      r.scrollHeight / 3.78
-    ) * zoom + 70}px`;
+if (resume.parentElement) {
+  resume.parentElement.style.minHeight =
+    `${
+      Math.max(
+        297,
+        resume.scrollHeight / 3.78
+      ) * zoom + 70
+    }px`;
 }
 }
 
+
+/* =========================
+ DYNAMIC FORM FIELDS
+========================= */
 
 function renderDynamic() {
 
@@ -853,21 +903,10 @@ const groups = {
     "Date"
   ],
 
-  skills: [
-    "Skill"
-  ],
-
-  languages: [
-    "Language"
-  ],
-
-  achievements: [
-    "Achievement"
-  ],
-
-  interests: [
-    "Interest"
-  ]
+  skills: ["Skill"],
+  languages: ["Language"],
+  achievements: ["Achievement"],
+  interests: ["Interest"]
 };
 
 
@@ -903,21 +942,10 @@ const keys = {
     "date"
   ],
 
-  skills: [
-    "name"
-  ],
-
-  languages: [
-    "name"
-  ],
-
-  achievements: [
-    "name"
-  ],
-
-  interests: [
-    "name"
-  ]
+  skills: ["name"],
+  languages: ["name"],
+  achievements: ["name"],
+  interests: ["name"]
 };
 
 
@@ -925,7 +953,7 @@ Object.entries(groups).forEach(
   ([group, labels]) => {
 
     const box =
-      $("#" + group + "List");
+      $(`#${group}List`);
 
     if (!box) {
       return;
@@ -937,15 +965,14 @@ Object.entries(groups).forEach(
     state[group].forEach(
       (item, index) => {
 
-        const wrap =
+        const wrapper =
           document.createElement("div");
 
-        wrap.className =
+        wrapper.className =
           "repeat-item";
 
 
-        wrap.innerHTML = `
-
+        wrapper.innerHTML = `
           <div class="repeat-head">
 
             <span>
@@ -967,7 +994,7 @@ Object.entries(groups).forEach(
 
 
         labels.forEach(
-          (label, i) => {
+          (label, fieldIndex) => {
 
             const field =
               document.createElement("div");
@@ -976,11 +1003,10 @@ Object.entries(groups).forEach(
               "field";
 
             const key =
-              keys[group][i];
+              keys[group][fieldIndex];
 
 
             field.innerHTML = `
-
               <label>
                 ${label}
               </label>
@@ -1005,20 +1031,19 @@ Object.entries(groups).forEach(
             `;
 
 
-            const element =
+            const input =
               field.querySelector(
                 "input, textarea"
               );
 
-            element.value =
+            input.value =
               item[key] || "";
 
-            wrap.appendChild(field);
+            wrapper.appendChild(field);
           }
         );
 
-
-        box.appendChild(wrap);
+        box.appendChild(wrapper);
       }
     );
   }
@@ -1026,10 +1051,13 @@ Object.entries(groups).forEach(
 }
 
 
+/* =========================
+ FORM SYNC
+========================= */
+
 function fillStatic() {
 
 $$("[data-key]").forEach(input => {
-
   input.value =
     state[input.dataset.key] || "";
 });
@@ -1052,25 +1080,25 @@ $$("[data-style]").forEach(input => {
     });
   }
 
-
-  const key =
-    input.dataset.style;
-
   input.value =
-    state.style[key] ?? "";
+    state.style[
+      input.dataset.style
+    ] ?? "";
 });
 
 
 $$("[data-hex]").forEach(input => {
-
   input.value =
     state.style[
       input.dataset.style
     ] || "";
-
 });
 }
 
+
+/* =========================
+ TEMPLATE UI
+========================= */
 
 function renderTemplateGrid() {
 
@@ -1081,11 +1109,9 @@ if (!grid) {
   return;
 }
 
-
 grid.innerHTML =
   templates.map(
     ([id, name]) => `
-
       <button
         class="template-card ${
           state.template === id
@@ -1118,11 +1144,9 @@ if (!container) {
   return;
 }
 
-
 container.innerHTML =
   presets.map(
     color => `
-
       <button
         class="preset"
         style="background:${color}"
@@ -1136,34 +1160,34 @@ container.innerHTML =
 }
 
 
+/* =========================
+ UPDATE UI
+========================= */
+
 function syncAndRender() {
 
 renderResume();
 renderTemplateGrid();
 
 
-const homeResumeName =
+const homeName =
   $("#homeResumeName");
 
-if (homeResumeName) {
-  homeResumeName.textContent =
+if (homeName) {
+  homeName.textContent =
     state.fullName ||
     state.resumeName;
 }
 
 
-const homeResumeTitle =
+const homeTitle =
   $("#homeResumeTitle");
 
-if (homeResumeTitle) {
-  homeResumeTitle.textContent =
+if (homeTitle) {
+  homeTitle.textContent =
     state.resumeName ||
     "Untitled resume";
 }
-
-
-const time =
-  state.updatedAt;
 
 
 const lastSaved =
@@ -1171,7 +1195,9 @@ const lastSaved =
 
 if (lastSaved) {
   lastSaved.textContent =
-    relativeTime(time);
+    relativeTime(
+      state.updatedAt
+    );
 }
 
 
@@ -1180,10 +1206,16 @@ const builderTime =
 
 if (builderTime) {
   builderTime.textContent =
-    formatTime(time);
+    formatTime(
+      state.updatedAt
+    );
 }
 }
 
+
+/* =========================
+ AUTO SAVE
+========================= */
 
 function markDirty() {
 
@@ -1199,12 +1231,11 @@ if (status) {
 clearTimeout(autoTimer);
 
 
-autoTimer = setTimeout(
-  () => {
-    saveResume(true);
-  },
-  1500
-);
+autoTimer =
+  setTimeout(
+    () => saveResume(true),
+    1500
+  );
 
 
 syncAndRender();
@@ -1218,7 +1249,7 @@ localStorage.setItem(
 
 
 /* ==========================================
- REALTIME DATABASE SAVE
+ SAVE TO REALTIME DATABASE
 ========================================== */
 
 async function saveResume(silent = false) {
@@ -1251,31 +1282,26 @@ if (!state.createdAt) {
   state.createdAt = now;
 }
 
-
 state.updatedAt =
   now;
 
 
 try {
 
-  const resumeRef = ref(
-    db,
-    `users/${user.uid}/resumes/default`
-  );
+  const resumeReference =
+    ref(
+      db,
+      `users/${user.uid}/resumes/default`
+    );
 
 
   await set(
-    resumeRef,
+    resumeReference,
     {
       ...state,
-
       userId: user.uid,
-
-      createdAt:
-        state.createdAt,
-
-      updatedAt:
-        serverTimestamp()
+      createdAt: state.createdAt,
+      updatedAt: now
     }
   );
 
@@ -1301,6 +1327,11 @@ try {
     );
   }
 
+
+  console.log(
+    "Resume saved to Realtime Database"
+  );
+
 } catch (error) {
 
   console.error(
@@ -1317,7 +1348,7 @@ try {
 
   if (!silent) {
     toast(
-      "Saved locally — check Firebase Database Rules"
+      "Saved locally — check Firebase Rules"
     );
   }
 }
@@ -1325,25 +1356,23 @@ try {
 
 
 /* ==========================================
- REALTIME DATABASE LOAD
+ LOAD FROM REALTIME DATABASE
 ========================================== */
 
 async function loadResume() {
 
-/* Load local draft first */
-
-const local =
+const localDraft =
   localStorage.getItem(
     "maison-resume-draft"
   );
 
 
-if (local) {
+if (localDraft) {
 
   try {
 
     const savedData =
-      JSON.parse(local);
+      JSON.parse(localDraft);
 
 
     state = {
@@ -1366,20 +1395,21 @@ if (local) {
 }
 
 
-/* Load from Realtime Database */
-
 if (user && db) {
 
   try {
 
-    const resumeRef = ref(
-      db,
-      `users/${user.uid}/resumes/default`
-    );
+    const resumeReference =
+      ref(
+        db,
+        `users/${user.uid}/resumes/default`
+      );
 
 
     const snapshot =
-      await get(resumeRef);
+      await get(
+        resumeReference
+      );
 
 
     if (snapshot.exists()) {
@@ -1389,9 +1419,7 @@ if (user && db) {
 
 
       state = {
-
         ...clone(defaults),
-
         ...data,
 
         style: {
@@ -1407,13 +1435,15 @@ if (user && db) {
       };
 
 
-      /* Update local backup */
-
       localStorage.setItem(
         "maison-resume-draft",
         JSON.stringify(state)
       );
 
+
+      console.log(
+        "Resume loaded from Realtime Database"
+      );
     }
 
   } catch (error) {
@@ -1431,6 +1461,10 @@ renderDynamic();
 syncAndRender();
 }
 
+
+/* =========================
+ AUTH UI
+========================= */
 
 function switchAuthMode(mode) {
 
@@ -1491,12 +1525,16 @@ $("#switchAuth").textContent =
 }
 
 
+/* =========================
+ EXPORT PNG
+========================= */
+
 async function exportImage() {
 
 const button =
   $("#pngBtn");
 
-const old =
+const oldText =
   button.textContent;
 
 
@@ -1538,8 +1576,7 @@ try {
 
 
   link.download =
-    (state.resumeName || "resume") +
-    ".png";
+    `${state.resumeName || "resume"}.png`;
 
 
   link.href =
@@ -1562,17 +1599,21 @@ try {
 } finally {
 
   button.textContent =
-    old;
+    oldText;
 }
 }
 
+
+/* =========================
+ EXPORT PDF
+========================= */
 
 async function exportPDF() {
 
 const button =
   $("#pdfBtn");
 
-const old =
+const oldText =
   button.textContent;
 
 
@@ -1670,7 +1711,9 @@ try {
     pageHeight;
 
 
-  while (heightLeft > 0) {
+  while (
+    heightLeft > 0
+  ) {
 
     position =
       heightLeft -
@@ -1698,8 +1741,7 @@ try {
 
 
   pdf.save(
-    (state.resumeName || "resume") +
-    ".pdf"
+    `${state.resumeName || "resume"}.pdf`
   );
 
 } catch (error) {
@@ -1713,14 +1755,14 @@ try {
 } finally {
 
   button.textContent =
-    old;
+    oldText;
 }
 }
 
 
-/* ==========================================
- AUTHENTICATION
-========================================== */
+/* =========================
+ EMAIL / PASSWORD AUTH
+========================= */
 
 $("#authForm").addEventListener(
 "submit",
@@ -1752,13 +1794,12 @@ async event => {
           .trim();
 
 
-      const confirm =
+      const confirmPassword =
         $("#authConfirm")
           .value;
 
 
       if (!name) {
-
         throw new Error(
           "Please enter your name"
         );
@@ -1766,7 +1807,8 @@ async event => {
 
 
       if (
-        password !== confirm
+        password !==
+        confirmPassword
       ) {
 
         throw new Error(
@@ -1812,6 +1854,10 @@ async event => {
 }
 );
 
+
+/* =========================
+ AUTH BUTTONS
+========================= */
 
 $("#switchAuth").onclick =
 () => {
@@ -1868,6 +1914,7 @@ async () => {
       email
     );
 
+
     toast(
       "Password reset email sent"
     );
@@ -1908,8 +1955,14 @@ button => {
 
 
 $("#logoutBtn").onclick =
-() => signOut(auth);
+() => {
+  signOut(auth);
+};
 
+
+/* =========================
+ NAVIGATION
+========================= */
 
 $("#newResumeBtn").onclick =
 () => {
@@ -1932,6 +1985,10 @@ $("#backDashboardBtn").onclick =
 };
 
 
+/* =========================
+ SAVE / EXPORT BUTTONS
+========================= */
+
 $("#saveBtn").onclick =
 () => saveResume(false);
 
@@ -1952,11 +2009,16 @@ $("#homePngBtn").onclick =
 exportImage;
 
 
+/* =========================
+ TABS
+========================= */
+
 $$(".tab").forEach(
 button => {
 
   button.onclick =
     () => {
+
       showTab(
         button.dataset.tab
       );
@@ -1965,6 +2027,10 @@ button => {
 }
 );
 
+
+/* =========================
+ TEMPLATE SELECT
+========================= */
 
 $("#templateGrid").addEventListener(
 "click",
@@ -1989,6 +2055,10 @@ event => {
 }
 );
 
+
+/* =========================
+ COLOR PRESETS
+========================= */
 
 $("#presetColors").addEventListener(
 "click",
@@ -2016,6 +2086,10 @@ event => {
 );
 
 
+/* =========================
+ INPUT CHANGES
+========================= */
+
 document.addEventListener(
 "input",
 event => {
@@ -2041,7 +2115,9 @@ event => {
     state[
       target.dataset.group
     ][
-      +target.dataset.index
+      Number(
+        target.dataset.index
+      )
     ][
       target.dataset.field
     ] =
@@ -2076,6 +2152,7 @@ event => {
 
 
       if (hex) {
+
         hex.value =
           target.value;
       }
@@ -2086,39 +2163,39 @@ event => {
   }
 
 
-  if (target.dataset.hex) {
+  if (
+    target.dataset.hex &&
+    validHex(target.value)
+  ) {
 
-    if (
-      validHex(
-        target.value
-      )
-    ) {
+    state.style[
+      target.dataset.style
+    ] =
+      target.value;
 
-      state.style[
-        target.dataset.style
-      ] =
+
+    const picker =
+      $(
+        `input[type="color"][data-style="${target.dataset.style}"]`
+      );
+
+
+    if (picker) {
+
+      picker.value =
         target.value;
-
-
-      const picker =
-        $(
-          `input[type="color"][data-style="${target.dataset.style}"]`
-        );
-
-
-      if (picker) {
-
-        picker.value =
-          target.value;
-      }
-
-
-      markDirty();
     }
+
+
+    markDirty();
   }
 }
 );
 
+
+/* =========================
+ SELECT CHANGES
+========================= */
 
 document.addEventListener(
 "change",
@@ -2144,6 +2221,10 @@ event => {
 }
 );
 
+
+/* =========================
+ ADD / REMOVE FIELDS
+========================= */
 
 document.addEventListener(
 "click",
@@ -2195,7 +2276,9 @@ event => {
 
 
     state[group].splice(
-      +remove.dataset.index,
+      Number(
+        remove.dataset.index
+      ),
       1
     );
 
@@ -2207,6 +2290,10 @@ event => {
 }
 );
 
+
+/* =========================
+ PROFILE PHOTO
+========================= */
 
 $("#photoInput").onchange =
 event => {
@@ -2241,6 +2328,10 @@ event => {
 };
 
 
+/* =========================
+ ZOOM BUTTONS
+========================= */
+
 $("#zoomIn").onclick =
 () => {
 
@@ -2267,24 +2358,20 @@ $("#zoomOut").onclick =
 };
 
 
-/* ==========================================
+/* =========================
  INITIAL RENDER
-========================================== */
+========================= */
 
 renderTemplateGrid();
-
 renderPresets();
-
 fillStatic();
-
 renderDynamic();
-
 syncAndRender();
 
 
-/* ==========================================
+/* =========================
  AUTH STATE
-========================================== */
+========================= */
 
 onAuthStateChanged(
 auth,
@@ -2296,9 +2383,7 @@ async currentUser => {
 
   if (!currentUser) {
 
-    show(
-      "#authView"
-    );
+    show("#authView");
 
     return;
   }
@@ -2322,9 +2407,7 @@ async currentUser => {
     `Good day, ${name}`;
 
 
-  show(
-    "#dashboardView"
-  );
+  show("#dashboardView");
 }
 );
 $$$
