@@ -41,9 +41,7 @@ const firebaseConfig = {
 ========================================================= */
 
 const app = initializeApp(firebaseConfig);
-
 const auth = getAuth(app);
-
 const db = getDatabase(app);
 
 console.log("Firebase Authentication connected");
@@ -92,7 +90,6 @@ const defaults = {
 
   photo: "",
 
-
   education: [],
 
   experience: [],
@@ -109,9 +106,7 @@ const defaults = {
 
   interests: [],
 
-
   template: "editorial",
-
 
   style: {
 
@@ -147,7 +142,6 @@ const defaults = {
 
   },
 
-
   createdAt: null,
 
   updatedAt: null
@@ -168,6 +162,139 @@ let zoom = 0.82;
 let authMode = "login";
 
 let autoTimer = null;
+
+
+/* =========================================================
+   ACCOUNT-SPECIFIC LOCAL STORAGE
+========================================================= */
+
+/*
+   IMPORTANT:
+   localStorage is shared by the browser.
+
+   OLD:
+   maison-resume-draft
+
+   NEW:
+   maison-resume-draft-FIREBASE_UID
+
+   This prevents Account B from seeing Account A's
+   locally stored resume.
+*/
+
+function getLocalKey() {
+
+  if (!user?.uid) {
+    return null;
+  }
+
+  return `maison-resume-draft-${user.uid}`;
+}
+
+
+function saveLocalDraft() {
+
+  const key = getLocalKey();
+
+  if (!key) {
+    return;
+  }
+
+  try {
+
+    localStorage.setItem(
+      key,
+      JSON.stringify(state)
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Local draft save error:",
+      error
+    );
+
+  }
+
+}
+
+
+function loadLocalDraft() {
+
+  const key = getLocalKey();
+
+  if (!key) {
+    return false;
+  }
+
+  const localDraft =
+    localStorage.getItem(key);
+
+  if (!localDraft) {
+    return false;
+  }
+
+  try {
+
+    const savedData =
+      JSON.parse(localDraft);
+
+    state = {
+
+      ...clone(defaults),
+
+      ...savedData,
+
+      style: {
+
+        ...defaults.style,
+
+        ...(savedData.style || {})
+
+      }
+
+    };
+
+    return true;
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "Local draft loading error:",
+      error
+    );
+
+    return false;
+
+  }
+
+}
+
+
+/* =========================================================
+   REMOVE OLD SHARED STORAGE
+========================================================= */
+
+try {
+
+  localStorage.removeItem(
+    "maison-resume-draft"
+  );
+
+}
+
+catch (error) {
+
+  console.warn(
+    "Could not remove old local draft:",
+    error
+  );
+
+}
 
 
 /* =========================================================
@@ -307,7 +434,6 @@ function toast(message) {
 
   element.classList.add("show");
 
-
   setTimeout(() => {
 
     element.classList.remove("show");
@@ -329,7 +455,6 @@ function show(id) {
 
   });
 
-
   const selected = $(id);
 
   if (selected) {
@@ -350,24 +475,17 @@ function showTab(name) {
   $$(".tab").forEach(button => {
 
     button.classList.toggle(
-
       "active",
-
       button.dataset.tab === name
-
     );
 
   });
 
-
   $$(".tab-panel").forEach(panel => {
 
     panel.classList.toggle(
-
       "active",
-
       panel.id === `${name}Panel`
-
     );
 
   });
@@ -390,36 +508,21 @@ function formatTime(timestamp) {
 
   }
 
-
   const date = new Date(timestamp);
 
-
   return `Last updated: ${date.toLocaleDateString(
-
     undefined,
-
     {
-
       month: "long",
-
       day: "numeric",
-
       year: "numeric"
-
     }
-
   )} • ${date.toLocaleTimeString(
-
     [],
-
     {
-
       hour: "numeric",
-
       minute: "2-digit"
-
     }
-
   )}`;
 
 }
@@ -440,16 +543,11 @@ function relativeTime(timestamp) {
 
   }
 
-
   const date = new Date(timestamp);
 
-
   const minutes = Math.floor(
-
     (Date.now() - date.getTime()) / 60000
-
   );
-
 
   if (minutes < 1) {
 
@@ -457,13 +555,11 @@ function relativeTime(timestamp) {
 
   }
 
-
   if (minutes < 60) {
 
     return `Last saved ${minutes} min ago`;
 
   }
-
 
   return formatTime(timestamp);
 
@@ -481,7 +577,6 @@ function section(title, content, extra = "") {
     return "";
 
   }
-
 
   return `
 
@@ -520,22 +615,18 @@ function contactHtml() {
 
   ].filter(Boolean);
 
-
   if (!contacts.length) {
 
     return "";
 
   }
 
-
   return `
 
     <div class="resume-contact">
 
       ${contacts
-
         .map(escapeHtml)
-
         .join(" • ")}
 
     </div>
@@ -557,7 +648,6 @@ function listText(array) {
 
   }
 
-
   return array
 
     .filter(Boolean)
@@ -571,18 +661,14 @@ function listText(array) {
           ? item
 
           : item.name ||
-
             item.title ||
-
             "";
-
 
       if (!text) {
 
         return "";
 
       }
-
 
       return `
 
@@ -613,7 +699,6 @@ function itemsHtml(items, type = "") {
 
   }
 
-
   return items
 
     .map(item => {
@@ -632,7 +717,6 @@ function itemsHtml(items, type = "") {
 
       }
 
-
       const title =
 
         item.degree ||
@@ -646,7 +730,6 @@ function itemsHtml(items, type = "") {
         item.name ||
 
         "";
-
 
       const sub =
 
@@ -662,15 +745,12 @@ function itemsHtml(items, type = "") {
 
         "";
 
-
       const date = [
 
         item.startYear ||
-
         item.startDate,
 
         item.endYear ||
-
         item.endDate
 
       ]
@@ -683,30 +763,20 @@ function itemsHtml(items, type = "") {
 
         "";
 
-
       const description =
-
         item.description || "";
-
 
       return `
 
         <div class="resume-item ${
-
           type === "timeline"
-
             ? "timeline-item"
-
             : ""
-
         }">
-
 
           <div class="item-top">
 
-
             <div>
-
 
               <div class="item-title">
 
@@ -714,16 +784,13 @@ function itemsHtml(items, type = "") {
 
               </div>
 
-
               <div class="item-meta">
 
                 ${escapeHtml(sub)}
 
               </div>
 
-
             </div>
-
 
             <div class="item-meta">
 
@@ -731,14 +798,10 @@ function itemsHtml(items, type = "") {
 
             </div>
 
-
           </div>
 
-
           ${
-
             description
-
               ? `
 
                 <div class="item-desc">
@@ -748,16 +811,11 @@ function itemsHtml(items, type = "") {
                 </div>
 
               `
-
               : ""
-
           }
 
-
           ${
-
             item.projectUrl
-
               ? `
 
                 <div class="item-meta">
@@ -767,11 +825,8 @@ function itemsHtml(items, type = "") {
                 </div>
 
               `
-
               : ""
-
           }
-
 
         </div>
 
@@ -793,86 +848,49 @@ function contentBlocks(side = false) {
   return {
 
     exp: section(
-
       "Experience",
-
       itemsHtml(
-
         state.experience,
-
         side ? "timeline" : ""
-
       )
-
     ),
-
 
     edu: section(
-
       "Education",
-
       itemsHtml(
-
         state.education,
-
         side ? "timeline" : ""
-
       )
-
     ),
-
 
     projects: section(
-
       "Projects",
-
       itemsHtml(state.projects)
-
     ),
-
 
     cert: section(
-
       "Certifications",
-
       itemsHtml(state.certifications)
-
     ),
-
 
     skills: section(
-
       "Skills",
-
       listText(state.skills)
-
     ),
-
 
     languages: section(
-
       "Languages",
-
       listText(state.languages)
-
     ),
-
 
     achievements: section(
-
       "Achievements",
-
       itemsHtml(state.achievements)
-
     ),
 
-
     interests: section(
-
       "Interests",
-
       listText(state.interests)
-
     )
 
   };
@@ -888,154 +906,91 @@ function renderResume() {
 
   const resume = $("#resumePreview");
 
-
   if (!resume) {
 
     return;
 
   }
 
-
   const style = state.style;
 
-
   const hasName =
-
     state.fullName.trim();
 
-
   resume.className =
-
     `resume template-${state.template}`;
 
-
   resume.style.setProperty(
-
     "--accent",
-
     style.accentColor
-
   );
 
-
   resume.style.setProperty(
-
     "--text",
-
     style.textColor
-
   );
 
-
   resume.style.setProperty(
-
     "--body-font",
-
     `"${style.bodyFont}"`
-
   );
 
-
   resume.style.setProperty(
-
     "--heading-font",
-
     `"${style.headingFont}"`
-
   );
 
-
   resume.style.setProperty(
-
     "--heading-size",
-
     `${style.headingSize}px`
-
   );
 
-
   resume.style.setProperty(
-
     "--body-size",
-
     `${style.bodySize}px`
-
   );
 
-
   resume.style.setProperty(
-
     "--page-padding",
-
     `${style.pagePadding}mm`
-
   );
 
-
   resume.style.setProperty(
-
     "--border-width",
-
     `${style.borderWidth}px`
-
   );
 
-
   resume.style.setProperty(
-
     "--border-style",
-
     style.borderStyle
-
   );
 
-
   resume.style.setProperty(
-
     "--border-color",
-
     style.borderColor
-
   );
 
-
   resume.style.setProperty(
-
     "--radius",
-
     `${style.radius}px`
-
   );
-
 
   resume.style.setProperty(
-
     "--line-height",
-
     style.lineHeight || 1.45
-
   );
-
 
   resume.style.background =
-
     style.backgroundColor;
 
-
   resume.style.width =
-
     `${style.pageWidth}mm`;
 
-
   resume.style.minHeight =
-
     `${style.pageHeight}mm`;
 
-
   resume.style.boxSizing =
-
     "border-box";
-
 
   if (!hasName) {
 
@@ -1046,16 +1001,11 @@ function renderResume() {
         <div>
 
           <h2>
-
             Start building your resume
-
           </h2>
 
-
           <p>
-
             Your live document will appear here as you type.
-
           </p>
 
         </div>
@@ -1064,40 +1014,31 @@ function renderResume() {
 
     `;
 
-
     applyZoom();
 
     return;
 
   }
 
-
   const photo = state.photo
 
     ? `
 
       <img
-
         class="profile-photo"
-
-        src="${state.photo}"
-
+        src="${escapeHtml(state.photo)}"
         alt="Profile photo"
-
       >
 
     `
 
     : "";
 
-
   const header = `
 
     <header class="resume-header">
 
-
       <div>
-
 
         <h1 class="resume-name">
 
@@ -1105,11 +1046,8 @@ function renderResume() {
 
         </h1>
 
-
         ${
-
           state.title
-
             ? `
 
               <p class="resume-title">
@@ -1119,45 +1057,29 @@ function renderResume() {
               </p>
 
             `
-
             : ""
-
         }
-
 
         ${contactHtml()}
 
-
       </div>
 
-
       ${photo}
-
 
     </header>
 
   `;
 
-
   const summary = section(
-
     "Profile",
-
     state.summary
-
       ? `<p>${escapeHtml(state.summary)}</p>`
-
       : ""
-
   );
 
-
   const blocks =
-
     contentBlocks(
-
       state.template === "timeline"
-
     );
 
 
@@ -1173,9 +1095,7 @@ function renderResume() {
 
       ${summary}
 
-
       <div class="resume-body">
-
 
         <div>
 
@@ -1189,7 +1109,6 @@ function renderResume() {
 
         </div>
 
-
         <aside>
 
           ${blocks.skills}
@@ -1201,7 +1120,6 @@ function renderResume() {
           ${blocks.interests}
 
         </aside>
-
 
       </div>
 
@@ -1220,9 +1138,7 @@ function renderResume() {
 
       <aside class="modern-side">
 
-
         ${photo}
-
 
         <h1 class="resume-name">
 
@@ -1230,16 +1146,17 @@ function renderResume() {
 
         </h1>
 
-
-        <p class="resume-title">
-
-          ${escapeHtml(state.title)}
-
-        </p>
-
+        ${
+          state.title
+            ? `
+              <p class="resume-title">
+                ${escapeHtml(state.title)}
+              </p>
+            `
+            : ""
+        }
 
         ${contactHtml()}
-
 
         ${blocks.skills}
 
@@ -1247,12 +1164,9 @@ function renderResume() {
 
         ${blocks.interests}
 
-
       </aside>
 
-
       <main class="modern-main">
-
 
         ${summary}
 
@@ -1265,7 +1179,6 @@ function renderResume() {
         ${blocks.cert}
 
         ${blocks.achievements}
-
 
       </main>
 
@@ -1284,32 +1197,29 @@ function renderResume() {
 
       <div class="creative-hero">
 
-
         <h1 class="resume-name">
 
           ${escapeHtml(state.fullName)}
 
         </h1>
 
-
-        <p class="resume-title">
-
-          ${escapeHtml(state.title)}
-
-        </p>
-
+        ${
+          state.title
+            ? `
+              <p class="resume-title">
+                ${escapeHtml(state.title)}
+              </p>
+            `
+            : ""
+        }
 
         ${contactHtml()}
 
-
       </div>
-
 
       ${summary}
 
-
       <div class="creative-grid">
-
 
         <div>
 
@@ -1320,7 +1230,6 @@ function renderResume() {
           ${blocks.achievements}
 
         </div>
-
 
         <div>
 
@@ -1335,7 +1244,6 @@ function renderResume() {
           ${blocks.interests}
 
         </div>
-
 
       </div>
 
@@ -1356,9 +1264,7 @@ function renderResume() {
 
       ${summary}
 
-
       <div class="creative-grid">
-
 
         <div>
 
@@ -1369,7 +1275,6 @@ function renderResume() {
           ${blocks.achievements}
 
         </div>
-
 
         <div>
 
@@ -1384,7 +1289,6 @@ function renderResume() {
           ${blocks.interests}
 
         </div>
-
 
       </div>
 
@@ -1405,36 +1309,21 @@ function renderResume() {
 
       ${summary}
 
-
       ${section(
-
         "Experience",
-
         itemsHtml(
-
           state.experience,
-
           "timeline"
-
         )
-
       )}
-
 
       ${section(
-
         "Education",
-
         itemsHtml(
-
           state.education,
-
           "timeline"
-
         )
-
       )}
-
 
       ${blocks.projects}
 
@@ -1467,9 +1356,7 @@ function renderResume() {
 
       </div>
 
-
       <div class="creative-grid">
-
 
         <div>
 
@@ -1480,7 +1367,6 @@ function renderResume() {
           ${blocks.projects}
 
         </div>
-
 
         <div>
 
@@ -1497,7 +1383,6 @@ function renderResume() {
           ${blocks.interests}
 
         </div>
-
 
       </div>
 
@@ -1538,7 +1423,6 @@ function renderResume() {
 
   }
 
-
   applyZoom();
 
 }
@@ -1552,30 +1436,23 @@ function applyZoom() {
 
   const resume = $("#resumePreview");
 
-
   if (!resume) {
 
     return;
 
   }
 
-
   resume.style.transform =
-
     `scale(${zoom})`;
 
-
   const label = $("#zoomLabel");
-
 
   if (label) {
 
     label.textContent =
-
       `${Math.round(zoom * 100)}%`;
 
   }
-
 
   if (resume.parentElement) {
 
@@ -1607,86 +1484,49 @@ function renderDynamic() {
   const groups = {
 
     education: [
-
       "Degree",
-
       "Institution",
-
       "Start Year",
-
       "End Year",
-
       "Description"
-
     ],
-
 
     experience: [
-
       "Job Title",
-
       "Company",
-
       "Location",
-
       "Start Date",
-
       "End Date",
-
       "Description"
-
     ],
-
 
     projects: [
-
       "Project Name",
-
       "Description",
-
       "Technologies",
-
       "Project URL"
-
     ],
-
 
     certifications: [
-
       "Certificate Name",
-
       "Issuing Organization",
-
       "Date"
-
     ],
-
 
     skills: [
-
       "Skill"
-
     ],
-
 
     languages: [
-
       "Language"
-
     ],
-
 
     achievements: [
-
       "Achievement"
-
     ],
 
-
     interests: [
-
       "Interest"
-
     ]
 
   };
@@ -1695,165 +1535,102 @@ function renderDynamic() {
   const keys = {
 
     education: [
-
       "degree",
-
       "institution",
-
       "startYear",
-
       "endYear",
-
       "description"
-
     ],
-
 
     experience: [
-
       "jobTitle",
-
       "company",
-
       "location",
-
       "startDate",
-
       "endDate",
-
       "description"
-
     ],
-
 
     projects: [
-
       "projectName",
-
       "description",
-
       "technologies",
-
       "projectUrl"
-
     ],
-
 
     certifications: [
-
       "certificateName",
-
       "issuingOrganization",
-
       "date"
-
     ],
-
 
     skills: [
-
       "name"
-
     ],
-
 
     languages: [
-
       "name"
-
     ],
-
 
     achievements: [
-
       "name"
-
     ],
 
-
     interests: [
-
       "name"
-
     ]
 
   };
 
 
   Object.entries(groups).forEach(
-
     ([group, labels]) => {
 
-
       const box =
-
         $(`#${group}List`);
 
-
       if (!box) {
-
         return;
-
       }
-
 
       box.innerHTML = "";
 
-
       const items =
-
         Array.isArray(state[group])
-
           ? state[group]
-
           : [];
 
 
       items.forEach(
-
         (item, index) => {
 
-
           const wrapper =
-
             document.createElement("div");
 
-
           wrapper.className =
-
             "repeat-item";
-
 
           wrapper.innerHTML = `
 
             <div class="repeat-head">
 
-
               <span>
 
                 ${group.slice(0, -1)}
-
                 ${index + 1}
 
               </span>
 
-
               <button
-
                 class="remove-btn"
-
                 data-remove="${group}"
-
                 data-index="${index}"
-
                 type="button"
-
               >
 
                 Remove
 
               </button>
-
 
             </div>
 
@@ -1861,22 +1638,15 @@ function renderDynamic() {
 
 
           labels.forEach(
-
             (label, fieldIndex) => {
 
-
               const field =
-
                 document.createElement("div");
 
-
               field.className =
-
                 "field";
 
-
               const key =
-
                 keys[group][fieldIndex];
 
 
@@ -1888,21 +1658,15 @@ function renderDynamic() {
 
                 </label>
 
-
                 ${
-
                   label === "Description"
 
                     ? `
 
                       <textarea
-
                         data-group="${group}"
-
                         data-index="${index}"
-
                         data-field="${key}"
-
                       ></textarea>
 
                     `
@@ -1910,51 +1674,39 @@ function renderDynamic() {
                     : `
 
                       <input
-
                         data-group="${group}"
-
                         data-index="${index}"
-
                         data-field="${key}"
-
                       >
 
                     `
-
                 }
 
               `;
 
 
               const input =
-
                 field.querySelector(
-
                   "input, textarea"
-
                 );
 
 
               input.value =
-
                 item[key] || "";
 
 
               wrapper.appendChild(field);
 
             }
-
           );
 
 
           box.appendChild(wrapper);
 
         }
-
       );
 
     }
-
   );
 
 }
@@ -1969,7 +1721,6 @@ function fillStatic() {
   $$("[data-key]").forEach(input => {
 
     input.value =
-
       state[input.dataset.key] || "";
 
   });
@@ -1977,40 +1728,27 @@ function fillStatic() {
 
   $$("[data-style]").forEach(input => {
 
-
     if (
-
       input.tagName === "SELECT" &&
-
       input.options.length === 0
-
     ) {
 
       fonts.forEach(font => {
 
         input.add(
-
           new Option(
-
             font,
-
             font
-
           )
-
         );
 
       });
 
     }
 
-
     input.value =
-
       state.style[
-
         input.dataset.style
-
       ] ?? "";
 
   });
@@ -2019,11 +1757,8 @@ function fillStatic() {
   $$("[data-hex]").forEach(input => {
 
     input.value =
-
       state.style[
-
         input.dataset.style
-
       ] || "";
 
   });
@@ -2038,56 +1773,36 @@ function fillStatic() {
 function renderTemplateGrid() {
 
   const grid =
-
     $("#templateGrid");
 
-
   if (!grid) {
-
     return;
-
   }
-
 
   grid.innerHTML =
 
     templates.map(
-
       ([id, name]) => `
 
         <button
-
           class="template-card ${
-
             state.template === id
-
               ? "active"
-
               : ""
-
           }"
-
           data-template="${id}"
-
           type="button"
-
         >
-
 
           <div class="template-thumb"></div>
 
-
           <small>
-
             ${escapeHtml(name)}
-
           </small>
-
 
         </button>
 
       `
-
     )
 
     .join("");
@@ -2102,39 +1817,26 @@ function renderTemplateGrid() {
 function renderPresets() {
 
   const container =
-
     $("#presetColors");
 
-
   if (!container) {
-
     return;
-
   }
-
 
   container.innerHTML =
 
     presets.map(
-
       color => `
 
         <button
-
           class="preset"
-
           style="background:${color}"
-
           data-preset="${color}"
-
           title="${color}"
-
           type="button"
-
         ></button>
 
       `
-
     )
 
     .join("");
@@ -2154,70 +1856,51 @@ function syncAndRender() {
 
 
   const homeName =
-
     $("#homeResumeName");
-
 
   if (homeName) {
 
     homeName.textContent =
-
       state.fullName ||
-
       state.resumeName ||
-
       "Untitled resume";
 
   }
 
 
   const homeTitle =
-
     $("#homeResumeTitle");
-
 
   if (homeTitle) {
 
     homeTitle.textContent =
-
       state.resumeName ||
-
       "Untitled resume";
 
   }
 
 
   const lastSaved =
-
     $("#lastSaved");
-
 
   if (lastSaved) {
 
     lastSaved.textContent =
-
       relativeTime(
-
         state.updatedAt
-
       );
 
   }
 
 
   const builderTime =
-
     $("#builderTime");
-
 
   if (builderTime) {
 
     builderTime.textContent =
-
       formatTime(
-
         state.updatedAt
-
       );
 
   }
@@ -2232,47 +1915,39 @@ function syncAndRender() {
 function markDirty() {
 
   const status =
-
     $("#resumeStatus");
-
 
   if (status) {
 
     status.textContent =
-
       "Editing…";
 
   }
+
+
+  /*
+     Save locally immediately,
+     but under the current user's UID.
+  */
+
+  saveLocalDraft();
 
 
   clearTimeout(autoTimer);
 
 
   autoTimer =
-
     setTimeout(
-
       () => {
 
         saveResume(true);
 
       },
-
       1500
-
     );
 
 
   syncAndRender();
-
-
-  localStorage.setItem(
-
-    "maison-resume-draft",
-
-    JSON.stringify(state)
-
-  );
 
 }
 
@@ -2283,27 +1958,20 @@ function markDirty() {
 
 async function saveResume(silent = false) {
 
+  /*
+     If there is no authenticated user,
+     do NOT write a shared localStorage key.
+  */
+
   if (!user) {
-
-    localStorage.setItem(
-
-      "maison-resume-draft",
-
-      JSON.stringify(state)
-
-    );
-
 
     if (!silent) {
 
       toast(
-
-        "Saved locally. Please log in to sync with Firebase."
-
+        "Please log in to save your resume."
       );
 
     }
-
 
     return;
 
@@ -2311,42 +1979,38 @@ async function saveResume(silent = false) {
 
 
   const status =
-
     $("#resumeStatus");
-
 
   if (status) {
 
     status.textContent =
-
       "Saving…";
 
   }
 
 
-  const now = Date.now();
+  const now =
+    Date.now();
 
 
   if (!state.createdAt) {
 
-    state.createdAt = now;
+    state.createdAt =
+      now;
 
   }
 
 
-  state.updatedAt = now;
+  state.updatedAt =
+    now;
 
 
   try {
 
     const resumeReference =
-
       ref(
-
         db,
-
         `users/${user.uid}/resumes/default`
-
       );
 
 
@@ -2354,37 +2018,35 @@ async function saveResume(silent = false) {
 
       ...clone(state),
 
-      userId: user.uid,
+      userId:
+        user.uid,
 
-      createdAt: state.createdAt,
+      createdAt:
+        state.createdAt,
 
-      updatedAt: state.updatedAt
+      updatedAt:
+        state.updatedAt
 
     };
 
 
     await set(
-
       resumeReference,
-
       resumeData
-
     );
 
 
-    localStorage.setItem(
+    /*
+       Also keep the current user's
+       local copy updated.
+    */
 
-      "maison-resume-draft",
-
-      JSON.stringify(state)
-
-    );
+    saveLocalDraft();
 
 
     if (status) {
 
       status.textContent =
-
         "Saved ✓";
 
     }
@@ -2396,20 +2058,19 @@ async function saveResume(silent = false) {
     if (!silent) {
 
       toast(
-
         "Resume saved successfully ✓"
-
       );
 
     }
 
 
     console.log(
+      "Resume saved for:",
+      user.uid
+    );
 
-      "Resume saved successfully:",
-
-      `users/${user.uid}/resumes/default`
-
+    console.log(
+      `Firebase path: users/${user.uid}/resumes/default`
     );
 
   }
@@ -2418,18 +2079,14 @@ async function saveResume(silent = false) {
   catch (error) {
 
     console.error(
-
       "Realtime Database save error:",
-
       error
-
     );
 
 
     if (status) {
 
       status.textContent =
-
         "Save failed";
 
     }
@@ -2438,9 +2095,7 @@ async function saveResume(silent = false) {
     if (!silent) {
 
       toast(
-
         "Could not save to Firebase. Check your Database Rules."
-
       );
 
     }
@@ -2456,181 +2111,152 @@ async function saveResume(silent = false) {
 
 async function loadResume() {
 
-  /* -----------------------------------------
-     RESET TO DEFAULTS
-  ----------------------------------------- */
+  /*
+     ALWAYS reset state first.
+     This is important when switching accounts.
+  */
 
-  state = clone(defaults);
-
-
-  /* -----------------------------------------
-     LOAD LOCAL DRAFT FIRST
-  ----------------------------------------- */
-
-  const localDraft =
-
-    localStorage.getItem(
-
-      "maison-resume-draft"
-
-    );
+  state =
+    clone(defaults);
 
 
-  if (localDraft) {
+  /*
+     Load only the current user's
+     localStorage draft.
+  */
 
-    try {
+  loadLocalDraft();
 
-      const savedData =
 
-        JSON.parse(localDraft);
+  /*
+     If there is no user, stop here.
+  */
+
+  if (!user || !db) {
+
+    fillStatic();
+
+    renderDynamic();
+
+    syncAndRender();
+
+    return;
+
+  }
+
+
+  try {
+
+    const resumeReference =
+      ref(
+        db,
+        `users/${user.uid}/resumes/default`
+      );
+
+
+    const snapshot =
+      await get(
+        resumeReference
+      );
+
+
+    /*
+       Firebase has the user's resume.
+       Firebase is the source of truth.
+    */
+
+    if (snapshot.exists()) {
+
+      const data =
+        snapshot.val();
 
 
       state = {
 
         ...clone(defaults),
 
-        ...savedData,
-
+        ...data,
 
         style: {
 
           ...defaults.style,
 
-          ...(savedData.style || {})
+          ...(data.style || {})
 
-        }
+        },
+
+        createdAt:
+          data.createdAt || null,
+
+        updatedAt:
+          data.updatedAt || null
 
       };
+
+
+      /*
+         Sync Firebase copy to this
+         user's localStorage.
+      */
+
+      saveLocalDraft();
+
+
+      console.log(
+        "Resume loaded from Firebase for:",
+        user.uid
+      );
 
     }
 
 
-    catch (error) {
+    /*
+       IMPORTANT:
+       If Firebase has NO resume for this
+       account, start completely fresh.
 
-      console.warn(
+       We do NOT use another user's data.
+    */
 
-        "Local draft could not be loaded:",
+    else {
 
-        error
+      state =
+        clone(defaults);
 
+      console.log(
+        "New account detected. Starting fresh resume for:",
+        user.uid
       );
+
+      saveLocalDraft();
 
     }
 
   }
 
 
-  /* -----------------------------------------
-     LOAD FIREBASE DATA
-  ----------------------------------------- */
+  catch (error) {
 
-  if (user && db) {
-
-    try {
-
-      const resumeReference =
-
-        ref(
-
-          db,
-
-          `users/${user.uid}/resumes/default`
-
-        );
+    console.error(
+      "Firebase resume load error:",
+      error
+    );
 
 
-      const snapshot =
+    /*
+       If Firebase temporarily fails,
+       use ONLY this user's local draft.
+    */
 
-        await get(
+    state =
+      clone(defaults);
 
-          resumeReference
-
-        );
-
-
-      if (snapshot.exists()) {
-
-        const data =
-
-          snapshot.val();
+    loadLocalDraft();
 
 
-        state = {
-
-          ...clone(defaults),
-
-          ...data,
-
-
-          style: {
-
-            ...defaults.style,
-
-            ...(data.style || {})
-
-          },
-
-
-          createdAt:
-
-            data.createdAt || null,
-
-
-          updatedAt:
-
-            data.updatedAt || null
-
-        };
-
-
-        localStorage.setItem(
-
-          "maison-resume-draft",
-
-          JSON.stringify(state)
-
-        );
-
-
-        console.log(
-
-          "Resume loaded from Firebase"
-
-        );
-
-      }
-
-      else {
-
-        console.log(
-
-          "No Firebase resume found. Using local/default data."
-
-        );
-
-      }
-
-    }
-
-
-    catch (error) {
-
-      console.error(
-
-        "Firebase resume load error:",
-
-        error
-
-      );
-
-
-      toast(
-
-        "Could not load Firebase data. Using local data."
-
-      );
-
-    }
+    toast(
+      "Could not load Firebase data. Using your local draft."
+    );
 
   }
 
@@ -2650,84 +2276,116 @@ async function loadResume() {
 
 function switchAuthMode(mode) {
 
-  authMode = mode;
+  authMode =
+    mode;
 
 
   const signup =
-
     mode === "signup";
 
 
-  $("#authTitle").textContent =
+  const authTitle =
+    $("#authTitle");
 
-    signup
+  if (authTitle) {
 
-      ? "Create your account"
+    authTitle.textContent =
+      signup
+        ? "Create your account"
+        : "Welcome back";
 
-      : "Welcome back";
-
-
-  $("#authSubtitle").textContent =
-
-    signup
-
-      ? "Start building a resume that feels like you."
-
-      : "Your next opportunity starts with a better resume.";
+  }
 
 
-  $("#nameField").classList.toggle(
+  const authSubtitle =
+    $("#authSubtitle");
 
-    "hidden",
+  if (authSubtitle) {
 
-    !signup
+    authSubtitle.textContent =
+      signup
+        ? "Start building a resume that feels like you."
+        : "Your next opportunity starts with a better resume.";
 
-  );
-
-
-  $("#confirmField").classList.toggle(
-
-    "hidden",
-
-    !signup
-
-  );
+  }
 
 
-  $("#forgotBtn").classList.toggle(
+  const nameField =
+    $("#nameField");
 
-    "hidden",
+  if (nameField) {
 
-    signup
+    nameField.classList.toggle(
+      "hidden",
+      !signup
+    );
 
-  );
-
-
-  $("#authSubmit").textContent =
-
-    signup
-
-      ? "Create account"
-
-      : "Log in";
+  }
 
 
-  $("#switchText").textContent =
+  const confirmField =
+    $("#confirmField");
 
-    signup
+  if (confirmField) {
 
-      ? "Already have an account?"
+    confirmField.classList.toggle(
+      "hidden",
+      !signup
+    );
 
-      : "Don't have an account?";
+  }
 
 
-  $("#switchAuth").textContent =
+  const forgotBtn =
+    $("#forgotBtn");
 
-    signup
+  if (forgotBtn) {
 
-      ? "Log in"
+    forgotBtn.classList.toggle(
+      "hidden",
+      signup
+    );
 
-      : "Sign up";
+  }
+
+
+  const authSubmit =
+    $("#authSubmit");
+
+  if (authSubmit) {
+
+    authSubmit.textContent =
+      signup
+        ? "Create account"
+        : "Log in";
+
+  }
+
+
+  const switchText =
+    $("#switchText");
+
+  if (switchText) {
+
+    switchText.textContent =
+      signup
+        ? "Already have an account?"
+        : "Don't have an account?";
+
+  }
+
+
+  const switchAuthButton =
+    $("#switchAuth");
+
+  if (switchAuthButton) {
+
+    switchAuthButton.textContent =
+      signup
+        ? "Log in"
+        : "Sign up";
+
+  }
 
 }
 
@@ -2736,523 +2394,460 @@ function switchAuthMode(mode) {
    EMAIL AUTH
 ========================================================= */
 
-$("#authForm").addEventListener(
+const authForm =
+  $("#authForm");
 
-  "submit",
 
-  async event => {
+if (authForm) {
 
-    event.preventDefault();
+  authForm.addEventListener(
+    "submit",
+    async event => {
 
+      event.preventDefault();
 
-    const email =
 
-      $("#authEmail")
+      const email =
+        $("#authEmail")
+          ?.value
+          .trim();
 
-        .value
 
-        .trim();
+      const password =
+        $("#authPassword")
+          ?.value || "";
 
 
-    const password =
+      if (!email) {
 
-      $("#authPassword").value;
+        toast(
+          "Please enter your email."
+        );
 
+        return;
 
-    if (!email) {
+      }
 
-      toast(
 
-        "Please enter your email."
+      if (!password) {
 
-      );
+        toast(
+          "Please enter your password."
+        );
 
-      return;
+        return;
 
-    }
+      }
 
 
-    if (!password) {
+      const submitButton =
+        $("#authSubmit");
 
-      toast(
 
-        "Please enter your password."
+      const originalText =
+        submitButton?.textContent ||
+        "Submit";
 
-      );
 
-      return;
+      if (submitButton) {
 
-    }
+        submitButton.disabled =
+          true;
 
+        submitButton.textContent =
+          authMode === "signup"
+            ? "Creating..."
+            : "Logging in...";
 
-    const submitButton =
+      }
 
-      $("#authSubmit");
 
+      try {
 
-    const originalText =
+        /* -------------------------------------
+           SIGN UP
+        ------------------------------------- */
 
-      submitButton.textContent;
+        if (authMode === "signup") {
 
+          const name =
+            $("#authName")
+              ?.value
+              .trim();
 
-    submitButton.disabled = true;
 
-    submitButton.textContent =
+          const confirmPassword =
+            $("#authConfirm")
+              ?.value || "";
 
-      authMode === "signup"
 
-        ? "Creating..."
+          if (!name) {
 
-        : "Logging in...";
-
-
-    try {
-
-
-      /* -------------------------------------
-         SIGN UP
-      ------------------------------------- */
-
-      if (authMode === "signup") {
-
-        const name =
-
-          $("#authName")
-
-            .value
-
-            .trim();
-
-
-        const confirmPassword =
-
-          $("#authConfirm").value;
-
-
-        if (!name) {
-
-          throw new Error(
-
-            "Please enter your name."
-
-          );
-
-        }
-
-
-        if (password.length < 6) {
-
-          throw new Error(
-
-            "Password must be at least 6 characters."
-
-          );
-
-        }
-
-
-        if (
-
-          password !==
-
-          confirmPassword
-
-        ) {
-
-          throw new Error(
-
-            "Passwords do not match."
-
-          );
-
-        }
-
-
-        const credential =
-
-          await createUserWithEmailAndPassword(
-
-            auth,
-
-            email,
-
-            password
-
-          );
-
-
-        await updateProfile(
-
-          credential.user,
-
-          {
-
-            displayName: name
+            throw new Error(
+              "Please enter your name."
+            );
 
           }
 
-        );
 
+          if (password.length < 6) {
 
-        toast(
+            throw new Error(
+              "Password must be at least 6 characters."
+            );
 
-          "Account created successfully ✓"
+          }
 
-        );
-
-      }
-
-
-      /* -------------------------------------
-         LOGIN
-      ------------------------------------- */
-
-      else {
-
-        await signInWithEmailAndPassword(
-
-          auth,
-
-          email,
-
-          password
-
-        );
-
-
-        toast(
-
-          "Welcome back ✓"
-
-        );
-
-      }
-
-    }
-
-
-    catch (error) {
-
-      console.error(
-
-        "Authentication error:",
-
-        error
-
-      );
-
-
-      let message =
-
-        error.message || "Authentication failed.";
-
-
-      message = message
-
-        .replace(
-
-          "Firebase: ",
-
-          ""
-
-        )
-
-        .replace(
-
-          /\(auth\/.*?\)\.?/g,
-
-          ""
-
-        )
-
-        .trim();
-
-
-      const errorMap = {
-
-        "auth/email-already-in-use":
-
-          "This email is already registered.",
-
-        "auth/invalid-email":
-
-          "Please enter a valid email.",
-
-        "auth/weak-password":
-
-          "Password must be at least 6 characters.",
-
-        "auth/invalid-credential":
-
-          "Incorrect email or password.",
-
-        "auth/user-not-found":
-
-          "Incorrect email or password.",
-
-        "auth/wrong-password":
-
-          "Incorrect email or password.",
-
-        "auth/popup-closed-by-user":
-
-          "Google login was cancelled.",
-
-        "auth/popup-blocked":
-
-          "Please allow popups for Google login."
-
-      };
-
-
-      Object.entries(errorMap).forEach(
-
-        ([key, value]) => {
 
           if (
-
-            error.code === key ||
-
-            error.message?.includes(key)
-
+            password !==
+            confirmPassword
           ) {
 
-            message = value;
+            throw new Error(
+              "Passwords do not match."
+            );
 
           }
 
+
+          const credential =
+            await createUserWithEmailAndPassword(
+              auth,
+              email,
+              password
+            );
+
+
+          await updateProfile(
+            credential.user,
+            {
+              displayName: name
+            }
+          );
+
+
+          /*
+             New account = completely fresh resume.
+          */
+
+          user =
+            credential.user;
+
+          state =
+            clone(defaults);
+
+          saveLocalDraft();
+
+
+          toast(
+            "Account created successfully ✓"
+          );
+
         }
 
-      );
+
+        /* -------------------------------------
+           LOGIN
+        ------------------------------------- */
+
+        else {
+
+          await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
 
 
-      toast(message);
+          toast(
+            "Welcome back ✓"
+          );
+
+        }
+
+      }
+
+
+      catch (error) {
+
+        console.error(
+          "Authentication error:",
+          error
+        );
+
+
+        let message =
+          error.message ||
+          "Authentication failed.";
+
+
+        const errorMap = {
+
+          "auth/email-already-in-use":
+            "This email is already registered.",
+
+          "auth/invalid-email":
+            "Please enter a valid email.",
+
+          "auth/weak-password":
+            "Password must be at least 6 characters.",
+
+          "auth/invalid-credential":
+            "Incorrect email or password.",
+
+          "auth/user-not-found":
+            "Incorrect email or password.",
+
+          "auth/wrong-password":
+            "Incorrect email or password.",
+
+          "auth/popup-closed-by-user":
+            "Google login was cancelled.",
+
+          "auth/popup-blocked":
+            "Please allow popups for Google login.",
+
+          "auth/network-request-failed":
+            "Network error. Please check your internet.",
+
+          "auth/too-many-requests":
+            "Too many attempts. Please try again later."
+
+        };
+
+
+        Object.entries(errorMap)
+          .forEach(
+            ([key, value]) => {
+
+              if (
+                error.code === key ||
+                error.message?.includes(key)
+              ) {
+
+                message =
+                  value;
+
+              }
+
+            }
+          );
+
+
+        toast(message);
+
+      }
+
+
+      finally {
+
+        if (submitButton) {
+
+          submitButton.disabled =
+            false;
+
+          submitButton.textContent =
+            originalText;
+
+        }
+
+      }
 
     }
+  );
 
-
-    finally {
-
-      submitButton.disabled = false;
-
-      submitButton.textContent =
-
-        originalText;
-
-    }
-
-  }
-
-);
+}
 
 
 /* =========================================================
    SWITCH LOGIN / SIGNUP
 ========================================================= */
 
-$("#switchAuth").onclick = () => {
+const switchAuth =
+  $("#switchAuth");
 
-  switchAuthMode(
 
-    authMode === "login"
+if (switchAuth) {
 
-      ? "signup"
+  switchAuth.onclick = () => {
 
-      : "login"
+    switchAuthMode(
+      authMode === "login"
+        ? "signup"
+        : "login"
+    );
 
-  );
+  };
 
-};
+}
 
 
 /* =========================================================
    GOOGLE LOGIN
 ========================================================= */
 
-$("#googleBtn").onclick =
-
-  async () => {
-
-
-    const button =
-
-      $("#googleBtn");
+const googleBtn =
+  $("#googleBtn");
 
 
-    const originalText =
+if (googleBtn) {
 
-      button.textContent;
+  googleBtn.onclick =
+    async () => {
 
-
-    button.disabled = true;
-
-    button.textContent =
-
-      "Opening Google...";
+      const button =
+        $("#googleBtn");
 
 
-    try {
-
-      const provider =
-
-        new GoogleAuthProvider();
+      const originalText =
+        button.textContent;
 
 
-      provider.setCustomParameters({
-
-        prompt: "select_account"
-
-      });
-
-
-      await signInWithPopup(
-
-        auth,
-
-        provider
-
-      );
-
-
-      toast(
-
-        "Google login successful ✓"
-
-      );
-
-    }
-
-
-    catch (error) {
-
-      console.error(
-
-        "Google authentication error:",
-
-        error
-
-      );
-
-
-      let message =
-
-        error.message ||
-
-        "Google login failed.";
-
-
-      if (
-
-        error.code ===
-
-        "auth/popup-closed-by-user"
-
-      ) {
-
-        message =
-
-          "Google login was cancelled.";
-
-      }
-
-
-      if (
-
-        error.code ===
-
-        "auth/popup-blocked"
-
-      ) {
-
-        message =
-
-          "Please allow popups for this website.";
-
-      }
-
-
-      toast(message);
-
-    }
-
-
-    finally {
-
-      button.disabled = false;
+      button.disabled =
+        true;
 
       button.textContent =
+        "Opening Google...";
 
-        originalText;
 
-    }
+      try {
 
-  };
+        const provider =
+          new GoogleAuthProvider();
+
+
+        provider.setCustomParameters({
+          prompt: "select_account"
+        });
+
+
+        await signInWithPopup(
+          auth,
+          provider
+        );
+
+
+        toast(
+          "Google login successful ✓"
+        );
+
+      }
+
+
+      catch (error) {
+
+        console.error(
+          "Google authentication error:",
+          error
+        );
+
+
+        let message =
+          error.message ||
+          "Google login failed.";
+
+
+        if (
+          error.code ===
+          "auth/popup-closed-by-user"
+        ) {
+
+          message =
+            "Google login was cancelled.";
+
+        }
+
+
+        if (
+          error.code ===
+          "auth/popup-blocked"
+        ) {
+
+          message =
+            "Please allow popups for this website.";
+
+        }
+
+
+        toast(message);
+
+      }
+
+
+      finally {
+
+        button.disabled =
+          false;
+
+        button.textContent =
+          originalText;
+
+      }
+
+    };
+
+}
 
 
 /* =========================================================
    FORGOT PASSWORD
 ========================================================= */
 
-$("#forgotBtn").onclick =
-
-  async () => {
-
-
-    const email =
-
-      $("#authEmail")
-
-        .value
-
-        .trim();
+const forgotBtn =
+  $("#forgotBtn");
 
 
-    if (!email) {
+if (forgotBtn) {
 
-      toast(
+  forgotBtn.onclick =
+    async () => {
 
-        "Enter your email first."
-
-      );
-
-      return;
-
-    }
+      const email =
+        $("#authEmail")
+          ?.value
+          .trim();
 
 
-    try {
+      if (!email) {
 
-      await sendPasswordResetEmail(
+        toast(
+          "Enter your email first."
+        );
 
-        auth,
+        return;
 
-        email
-
-      );
-
-
-      toast(
-
-        "Password reset email sent ✓"
-
-      );
-
-    }
+      }
 
 
-    catch (error) {
+      try {
 
-      console.error(error);
+        await sendPasswordResetEmail(
+          auth,
+          email
+        );
 
-      toast(
 
-        "Could not send password reset email."
+        toast(
+          "Password reset email sent ✓"
+        );
 
-      );
+      }
 
-    }
 
-  };
+      catch (error) {
+
+        console.error(error);
+
+        toast(
+          "Could not send password reset email."
+        );
+
+      }
+
+    };
+
+}
 
 
 /* =========================================================
@@ -3260,46 +2855,33 @@ $("#forgotBtn").onclick =
 ========================================================= */
 
 $$(".password-toggle").forEach(
-
   button => {
-
 
     button.onclick = () => {
 
-
       const input =
-
         $("#" + button.dataset.target);
 
 
       if (!input) {
-
         return;
-
       }
 
 
       input.type =
-
         input.type === "password"
-
           ? "text"
-
           : "password";
 
 
       button.textContent =
-
         input.type === "password"
-
           ? "Show"
-
           : "Hide";
 
     };
 
   }
-
 );
 
 
@@ -3307,151 +2889,214 @@ $$(".password-toggle").forEach(
    LOGOUT
 ========================================================= */
 
-$("#logoutBtn").onclick =
+const logoutBtn =
+  $("#logoutBtn");
 
-  async () => {
 
-    try {
+if (logoutBtn) {
 
-      await signOut(auth);
+  logoutBtn.onclick =
+    async () => {
 
-      toast(
+      try {
 
-        "Logged out successfully."
+        clearTimeout(autoTimer);
 
-      );
+        await signOut(auth);
 
-    }
 
-    catch (error) {
+        /*
+           Completely clear in-memory state.
+           This prevents the previous account's
+           resume from remaining visible.
+        */
 
-      console.error(error);
+        user = null;
 
-      toast(
+        state =
+          clone(defaults);
 
-        "Logout failed."
 
-      );
+        fillStatic();
+        renderDynamic();
+        syncAndRender();
 
-    }
 
-  };
+        show("#authView");
+
+
+        toast(
+          "Logged out successfully."
+        );
+
+      }
+
+
+      catch (error) {
+
+        console.error(error);
+
+        toast(
+          "Logout failed."
+        );
+
+      }
+
+    };
+
+}
 
 
 /* =========================================================
    DASHBOARD NAVIGATION
 ========================================================= */
 
-$("#newResumeBtn").onclick =
-
-  () => {
-
-    show("#builderView");
-
-  };
+const newResumeBtn =
+  $("#newResumeBtn");
 
 
-$("#editResumeBtn").onclick =
+if (newResumeBtn) {
 
-  () => {
+  newResumeBtn.onclick =
+    () => {
 
-    show("#builderView");
+      /*
+         "New Resume" should create a fresh
+         resume for the CURRENT account.
+      */
 
-    syncAndRender();
+      state =
+        clone(defaults);
 
-  };
+      saveLocalDraft();
+
+      fillStatic();
+      renderDynamic();
+      syncAndRender();
+
+      show("#builderView");
+
+    };
+
+}
 
 
-$("#backDashboardBtn").onclick =
+const editResumeBtn =
+  $("#editResumeBtn");
 
-  () => {
 
-    syncAndRender();
+if (editResumeBtn) {
 
-    show("#dashboardView");
+  editResumeBtn.onclick =
+    () => {
 
-  };
+      show("#builderView");
+
+      fillStatic();
+      renderDynamic();
+      syncAndRender();
+
+    };
+
+}
+
+
+const backDashboardBtn =
+  $("#backDashboardBtn");
+
+
+if (backDashboardBtn) {
+
+  backDashboardBtn.onclick =
+    () => {
+
+      syncAndRender();
+
+      show("#dashboardView");
+
+    };
+
+}
 
 
 /* =========================================================
    SAVE BUTTON
 ========================================================= */
 
-$("#saveBtn").onclick =
+const saveBtn =
+  $("#saveBtn");
 
-  () => {
 
-    saveResume(false);
+if (saveBtn) {
 
-  };
+  saveBtn.onclick =
+    () => {
+
+      saveResume(false);
+
+    };
+
+}
 
 
 /* =========================================================
    PNG EXPORT
 ========================================================= */
 
-async function exportImage(buttonId = "#pngBtn") {
+async function exportImage(
+  buttonId = "#pngBtn"
+) {
 
   const button =
-
     $(buttonId);
 
 
-  if (!button) {
+  /*
+     Important:
+     Dashboard buttons now work too.
+  */
 
-    return;
+  const oldText =
+    button?.textContent ||
+    "Download PNG";
+
+
+  if (button) {
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      "Preparing…";
 
   }
 
 
-  const oldText =
-
-    button.textContent;
-
-
-  button.disabled = true;
-
-  button.textContent =
-
-    "Preparing…";
-
-
   try {
 
-
     const {
-
       default: html2canvas
-
     } = await import(
-
       "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm"
-
     );
 
 
     const preview =
-
       $("#resumePreview");
 
 
     if (!preview) {
 
       throw new Error(
-
         "Resume preview not found."
-
       );
 
     }
 
 
     const canvas =
-
       await html2canvas(
-
         preview,
-
         {
 
           scale: 3,
@@ -3461,48 +3106,46 @@ async function exportImage(buttonId = "#pngBtn") {
           allowTaint: false,
 
           backgroundColor:
-
             state.style.backgroundColor,
 
           logging: false,
 
           windowWidth:
-
             preview.scrollWidth,
 
           windowHeight:
-
             preview.scrollHeight
 
         }
-
       );
 
 
     const link =
-
       document.createElement("a");
 
 
-    link.download =
-
-      `${
-
+    const fileName =
+      (
         state.resumeName ||
-
+        state.fullName ||
         "resume"
+      )
+        .replace(
+          /[^a-z0-9_\-\s]/gi,
+          ""
+        )
+        .trim() ||
+      "resume";
 
-      }.png`;
+
+    link.download =
+      `${fileName}.png`;
 
 
     link.href =
-
       canvas.toDataURL(
-
         "image/png",
-
         1
-
       );
 
 
@@ -3514,9 +3157,7 @@ async function exportImage(buttonId = "#pngBtn") {
 
 
     toast(
-
       "PNG downloaded successfully ✓"
-
     );
 
   }
@@ -3525,18 +3166,13 @@ async function exportImage(buttonId = "#pngBtn") {
   catch (error) {
 
     console.error(
-
       "PNG export error:",
-
       error
-
     );
 
 
     toast(
-
       "PNG export failed."
-
     );
 
   }
@@ -3544,9 +3180,15 @@ async function exportImage(buttonId = "#pngBtn") {
 
   finally {
 
-    button.disabled = false;
+    if (button) {
 
-    button.textContent = oldText;
+      button.disabled =
+        false;
+
+      button.textContent =
+        oldText;
+
+    }
 
   }
 
@@ -3557,34 +3199,31 @@ async function exportImage(buttonId = "#pngBtn") {
    PDF EXPORT
 ========================================================= */
 
-async function exportPDF(buttonId = "#pdfBtn") {
+async function exportPDF(
+  buttonId = "#pdfBtn"
+) {
 
   const button =
-
     $(buttonId);
 
 
-  if (!button) {
+  const oldText =
+    button?.textContent ||
+    "Download PDF";
 
-    return;
+
+  if (button) {
+
+    button.disabled =
+      true;
+
+    button.textContent =
+      "Preparing…";
 
   }
 
 
-  const oldText =
-
-    button.textContent;
-
-
-  button.disabled = true;
-
-  button.textContent =
-
-    "Preparing…";
-
-
   try {
-
 
     const [
 
@@ -3594,45 +3233,45 @@ async function exportPDF(buttonId = "#pdfBtn") {
 
     ] = await Promise.all([
 
-
       import(
-
         "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm"
-
       ),
 
-
       import(
-
         "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm"
-
       )
 
     ]);
 
 
     const element =
-
       $("#resumePreview");
 
 
     if (!element) {
 
       throw new Error(
-
         "Resume preview not found."
-
       );
 
     }
 
 
+    const pageWidth =
+      Number(
+        state.style.pageWidth
+      ) || 210;
+
+
+    const pageHeight =
+      Number(
+        state.style.pageHeight
+      ) || 297;
+
+
     const canvas =
-
       await html2canvas(
-
         element,
-
         {
 
           scale: 3,
@@ -3642,38 +3281,33 @@ async function exportPDF(buttonId = "#pdfBtn") {
           allowTaint: false,
 
           backgroundColor:
-
             state.style.backgroundColor,
 
           logging: false,
 
           windowWidth:
-
             element.scrollWidth,
 
           windowHeight:
-
             element.scrollHeight
 
         }
-
       );
 
 
     const pdf =
-
       new jsPDF({
 
-        orientation: "p",
+        orientation:
+          pageWidth > pageHeight
+            ? "landscape"
+            : "portrait",
 
         unit: "mm",
 
         format: [
-
-          state.style.pageWidth,
-
-          state.style.pageHeight
-
+          pageWidth,
+          pageHeight
         ],
 
         compress: true
@@ -3681,137 +3315,97 @@ async function exportPDF(buttonId = "#pdfBtn") {
       });
 
 
-    const pageWidth =
-
-      state.style.pageWidth;
-
-
-    const pageHeight =
-
-      state.style.pageHeight;
-
-
     const imageHeight =
-
       canvas.height *
-
       pageWidth /
-
       canvas.width;
 
 
     const image =
-
       canvas.toDataURL(
-
         "image/jpeg",
-
         0.98
-
       );
 
 
     let heightLeft =
-
       imageHeight;
 
 
-    let position = 0;
+    let position =
+      0;
 
 
     pdf.addImage(
-
       image,
-
       "JPEG",
-
       0,
-
       position,
-
       pageWidth,
-
       imageHeight,
-
       undefined,
-
       "FAST"
-
     );
 
 
     heightLeft -=
-
       pageHeight;
 
 
     while (heightLeft > 0) {
 
       position =
-
         heightLeft -
-
         imageHeight;
 
 
       pdf.addPage(
-
         [
-
           pageWidth,
-
           pageHeight
-
         ]
-
       );
 
 
       pdf.addImage(
-
         image,
-
         "JPEG",
-
         0,
-
         position,
-
         pageWidth,
-
         imageHeight,
-
         undefined,
-
         "FAST"
-
       );
 
 
       heightLeft -=
-
         pageHeight;
 
     }
 
 
-    pdf.save(
-
-      `${
-
+    const fileName =
+      (
         state.resumeName ||
-
+        state.fullName ||
         "resume"
+      )
+        .replace(
+          /[^a-z0-9_\-\s]/gi,
+          ""
+        )
+        .trim() ||
+      "resume";
 
-      }.pdf`
 
+    pdf.save(
+      `${fileName}.pdf`
     );
 
 
     toast(
-
       "PDF downloaded successfully ✓"
-
     );
 
   }
@@ -3820,18 +3414,13 @@ async function exportPDF(buttonId = "#pdfBtn") {
   catch (error) {
 
     console.error(
-
       "PDF export error:",
-
       error
-
     );
 
 
     toast(
-
       "PDF export failed."
-
     );
 
   }
@@ -3839,9 +3428,15 @@ async function exportPDF(buttonId = "#pdfBtn") {
 
   finally {
 
-    button.disabled = false;
+    if (button) {
 
-    button.textContent = oldText;
+      button.disabled =
+        false;
+
+      button.textContent =
+        oldText;
+
+    }
 
   }
 
@@ -3852,24 +3447,69 @@ async function exportPDF(buttonId = "#pdfBtn") {
    EXPORT BUTTONS
 ========================================================= */
 
-$("#pdfBtn").onclick =
-
-  () => exportPDF("#pdfBtn");
-
-
-$("#pngBtn").onclick =
-
-  () => exportImage("#pngBtn");
+const pdfBtn =
+  $("#pdfBtn");
 
 
-$("#homePdfBtn").onclick =
+if (pdfBtn) {
 
-  () => exportPDF("#homePdfBtn");
+  pdfBtn.onclick =
+    () => exportPDF("#pdfBtn");
+
+}
 
 
-$("#homePngBtn").onclick =
+const pngBtn =
+  $("#pngBtn");
 
-  () => exportImage("#homePngBtn");
+
+if (pngBtn) {
+
+  pngBtn.onclick =
+    () => exportImage("#pngBtn");
+
+}
+
+
+const homePdfBtn =
+  $("#homePdfBtn");
+
+
+if (homePdfBtn) {
+
+  homePdfBtn.onclick =
+    () => {
+
+      /*
+         Make sure dashboard export has
+         the current resume rendered.
+      */
+
+      syncAndRender();
+
+      exportPDF("#homePdfBtn");
+
+    };
+
+}
+
+
+const homePngBtn =
+  $("#homePngBtn");
+
+
+if (homePngBtn) {
+
+  homePngBtn.onclick =
+    () => {
+
+      syncAndRender();
+
+      exportImage("#homePngBtn");
+
+    };
+
+}
 
 
 /* =========================================================
@@ -3877,21 +3517,17 @@ $("#homePngBtn").onclick =
 ========================================================= */
 
 $$(".tab").forEach(
-
   button => {
 
     button.onclick = () => {
 
       showTab(
-
         button.dataset.tab
-
       );
 
     };
 
   }
-
 );
 
 
@@ -3899,80 +3535,76 @@ $$(".tab").forEach(
    TEMPLATE SELECT
 ========================================================= */
 
-$("#templateGrid").addEventListener(
-
-  "click",
-
-  event => {
+const templateGrid =
+  $("#templateGrid");
 
 
-    const button =
+if (templateGrid) {
 
-      event.target.closest(
+  templateGrid.addEventListener(
+    "click",
+    event => {
 
-        "[data-template]"
+      const button =
+        event.target.closest(
+          "[data-template]"
+        );
 
-      );
+
+      if (!button) {
+        return;
+      }
 
 
-    if (!button) {
+      state.template =
+        button.dataset.template;
 
-      return;
+
+      markDirty();
 
     }
+  );
 
-
-    state.template =
-
-      button.dataset.template;
-
-
-    markDirty();
-
-  }
-
-);
+}
 
 
 /* =========================================================
    PRESET COLORS
 ========================================================= */
 
-$("#presetColors").addEventListener(
-
-  "click",
-
-  event => {
+const presetColors =
+  $("#presetColors");
 
 
-    const button =
+if (presetColors) {
 
-      event.target.closest(
+  presetColors.addEventListener(
+    "click",
+    event => {
 
-        "[data-preset]"
+      const button =
+        event.target.closest(
+          "[data-preset]"
+        );
 
-      );
+
+      if (!button) {
+        return;
+      }
 
 
-    if (!button) {
+      state.style.accentColor =
+        button.dataset.preset;
 
-      return;
+
+      fillStatic();
+
+      markDirty();
 
     }
+  );
 
-
-    state.style.accentColor =
-
-      button.dataset.preset;
-
-
-    fillStatic();
-
-    markDirty();
-
-  }
-
-);
+}
 
 
 /* =========================================================
@@ -3980,14 +3612,10 @@ $("#presetColors").addEventListener(
 ========================================================= */
 
 document.addEventListener(
-
   "input",
-
   event => {
 
-
     const target =
-
       event.target;
 
 
@@ -3998,10 +3626,9 @@ document.addEventListener(
     if (target.dataset.key) {
 
       state[
-
         target.dataset.key
-
-      ] = target.value;
+      ] =
+        target.value;
 
 
       markDirty();
@@ -4015,40 +3642,28 @@ document.addEventListener(
 
     if (target.dataset.group) {
 
-
       const group =
-
         target.dataset.group;
 
 
       const index =
-
         Number(
-
           target.dataset.index
-
         );
 
 
       const field =
-
         target.dataset.field;
 
 
       if (
-
         Array.isArray(
-
           state[group]
-
         ) &&
-
         state[group][index]
-
       ) {
 
         state[group][index][field] =
-
           target.value;
 
       }
@@ -4064,16 +3679,11 @@ document.addEventListener(
     --------------------------------------- */
 
     if (
-
       target.dataset.style &&
-
       !target.dataset.hex
-
     ) {
 
-
       const key =
-
         target.dataset.style;
 
 
@@ -4087,44 +3697,18 @@ document.addEventListener(
 
 
       if (
-
         target.type === "color"
-
       ) {
 
-
-        const hex =
-
-          document.querySelector(
-
-            `
-
-              [data-style="${key}"]
-
-              [data-hex]
-
-            `
-
-          );
-
-
         const hexInput =
-
           document.querySelector(
-
-            `
-
-              input.hex[data-style="${key}"]
-
-            `
-
+            `input.hex[data-style="${key}"]`
           );
 
 
         if (hexInput) {
 
           hexInput.value =
-
             target.value;
 
         }
@@ -4142,47 +3726,32 @@ document.addEventListener(
     --------------------------------------- */
 
     if (
-
       target.dataset.hex
-
     ) {
 
-
       const value =
-
         target.value.trim();
 
 
       if (validHex(value)) {
 
-
         const key =
-
           target.dataset.style;
 
 
         state.style[key] =
-
           value;
 
 
         const picker =
-
           document.querySelector(
-
-            `
-
-              input[type="color"][data-style="${key}"]
-
-            `
-
+            `input[type="color"][data-style="${key}"]`
           );
 
 
         if (picker) {
 
           picker.value =
-
             value;
 
         }
@@ -4195,7 +3764,6 @@ document.addEventListener(
     }
 
   }
-
 );
 
 
@@ -4204,31 +3772,22 @@ document.addEventListener(
 ========================================================= */
 
 document.addEventListener(
-
   "change",
-
   event => {
 
-
     const target =
-
       event.target;
 
 
     if (
-
       target.dataset.style &&
-
       target.tagName === "SELECT"
-
     ) {
 
-
       state.style[
-
         target.dataset.style
-
-      ] = target.value;
+      ] =
+        target.value;
 
 
       markDirty();
@@ -4236,7 +3795,6 @@ document.addEventListener(
     }
 
   }
-
 );
 
 
@@ -4245,9 +3803,7 @@ document.addEventListener(
 ========================================================= */
 
 document.addEventListener(
-
   "click",
-
   event => {
 
 
@@ -4256,19 +3812,14 @@ document.addEventListener(
     --------------------------------------- */
 
     const add =
-
       event.target.closest(
-
         "[data-add]"
-
       );
 
 
     if (add) {
 
-
       const group =
-
         add.dataset.add;
 
 
@@ -4285,7 +3836,11 @@ document.addEventListener(
       ];
 
 
-      if (!Array.isArray(state[group])) {
+      if (
+        !Array.isArray(
+          state[group]
+        )
+      ) {
 
         state[group] = [];
 
@@ -4318,47 +3873,32 @@ document.addEventListener(
     --------------------------------------- */
 
     const remove =
-
       event.target.closest(
-
         "[data-remove]"
-
       );
 
 
     if (remove) {
 
-
       const group =
-
         remove.dataset.remove;
 
 
       const index =
-
         Number(
-
           remove.dataset.index
-
         );
 
 
       if (
-
         Array.isArray(
-
           state[group]
-
         )
-
       ) {
 
         state[group].splice(
-
           index,
-
           1
-
         );
 
       }
@@ -4371,7 +3911,6 @@ document.addEventListener(
     }
 
   }
-
 );
 
 
@@ -4379,125 +3918,145 @@ document.addEventListener(
    PROFILE PHOTO
 ========================================================= */
 
-$("#photoInput").onchange =
-
-  event => {
-
-
-    const file =
-
-      event.target.files?.[0];
+const photoInput =
+  $("#photoInput");
 
 
-    if (!file) {
+if (photoInput) {
 
-      return;
+  photoInput.onchange =
+    event => {
 
-    }
-
-
-    if (!file.type.startsWith("image/")) {
-
-      toast(
-
-        "Please select an image."
-
-      );
-
-      return;
-
-    }
+      const file =
+        event.target.files?.[0];
 
 
-    const reader =
-
-      new FileReader();
-
-
-    reader.onload = () => {
+      if (!file) {
+        return;
+      }
 
 
-      state.photo =
+      if (
+        !file.type.startsWith("image/")
+      ) {
 
-        reader.result;
+        toast(
+          "Please select an image."
+        );
+
+        return;
+
+      }
 
 
-      markDirty();
+      /*
+         Limit huge photos so localStorage
+         doesn't get filled too quickly.
+      */
+
+      if (
+        file.size > 5 * 1024 * 1024
+      ) {
+
+        toast(
+          "Please choose an image smaller than 5MB."
+        );
+
+        return;
+
+      }
 
 
-      toast(
+      const reader =
+        new FileReader();
 
-        "Profile photo added ✓"
 
-      );
+      reader.onload =
+        () => {
+
+          state.photo =
+            reader.result;
+
+
+          markDirty();
+
+
+          toast(
+            "Profile photo added ✓"
+          );
+
+        };
+
+
+      reader.onerror =
+        () => {
+
+          toast(
+            "Could not read the image."
+          );
+
+        };
+
+
+      reader.readAsDataURL(file);
 
     };
 
-
-    reader.onerror = () => {
-
-      toast(
-
-        "Could not read the image."
-
-      );
-
-    };
-
-
-    reader.readAsDataURL(file);
-
-  };
+}
 
 
 /* =========================================================
    ZOOM IN
 ========================================================= */
 
-$("#zoomIn").onclick =
-
-  () => {
-
-
-    zoom =
-
-      Math.min(
-
-        1.2,
-
-        zoom + 0.08
-
-      );
+const zoomIn =
+  $("#zoomIn");
 
 
-    applyZoom();
+if (zoomIn) {
 
-  };
+  zoomIn.onclick =
+    () => {
+
+      zoom =
+        Math.min(
+          1.2,
+          zoom + 0.08
+        );
+
+
+      applyZoom();
+
+    };
+
+}
 
 
 /* =========================================================
    ZOOM OUT
 ========================================================= */
 
-$("#zoomOut").onclick =
-
-  () => {
-
-
-    zoom =
-
-      Math.max(
-
-        0.35,
-
-        zoom - 0.08
-
-      );
+const zoomOut =
+  $("#zoomOut");
 
 
-    applyZoom();
+if (zoomOut) {
 
-  };
+  zoomOut.onclick =
+    () => {
+
+      zoom =
+        Math.max(
+          0.35,
+          zoom - 0.08
+        );
+
+
+      applyZoom();
+
+    };
+
+}
 
 
 /* =========================================================
@@ -4520,13 +4079,18 @@ syncAndRender();
 ========================================================= */
 
 onAuthStateChanged(
-
   auth,
-
   async currentUser => {
 
+    /*
+       Clear pending auto-save from previous account.
+    */
 
-    user = currentUser;
+    clearTimeout(autoTimer);
+
+
+    user =
+      currentUser;
 
 
     /* ---------------------------------------
@@ -4535,7 +4099,19 @@ onAuthStateChanged(
 
     if (!currentUser) {
 
+      state =
+        clone(defaults);
+
+
+      fillStatic();
+
+      renderDynamic();
+
+      syncAndRender();
+
+
       show("#authView");
+
 
       return;
 
@@ -4555,39 +4131,58 @@ onAuthStateChanged(
     catch (error) {
 
       console.error(
-
         "Resume loading error:",
-
         error
-
       );
 
     }
 
 
     const name =
-
       currentUser.displayName ||
 
       currentUser.email
-
         ?.split("@")[0] ||
 
       "there";
 
 
-    $("#userGreeting").textContent =
+    const userGreeting =
+      $("#userGreeting");
 
-      `Hello, ${name}`;
+
+    if (userGreeting) {
+
+      userGreeting.textContent =
+        `Hello, ${name}`;
+
+    }
 
 
-    $("#dashHello").textContent =
+    const dashHello =
+      $("#dashHello");
 
-      `Good day, ${name}`;
+
+    if (dashHello) {
+
+      dashHello.textContent =
+        `Good day, ${name}`;
+
+    }
 
 
     show("#dashboardView");
 
-  }
 
+    console.log(
+      "Current authenticated user:",
+      currentUser.uid
+    );
+
+    console.log(
+      "Current resume path:",
+      `users/${currentUser.uid}/resumes/default`
+    );
+
+  }
 );
